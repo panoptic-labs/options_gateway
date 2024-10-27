@@ -18,3 +18,16 @@ package-lock.json
 
 # Yarn
 yarn-error.log
+
+# TeX 
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pdf
+*.toc
+*.synctex.gz
+

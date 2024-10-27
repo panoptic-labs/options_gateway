@@ -1,0 +1,135 @@
+\documentclass[aps,preprint]{revtex4-1}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{User Manual for the Hummingbot Gateway Panooptic Protocol Connector}
+
+\author{Nicholas DePorzio}
+\affiliation{Physical Insight LLC}
+
+\date{\today}
+
+\begin{abstract}
+This manual provides detailed instructions on how to use . It covers installation, configuration, and usage.
+\end{abstract}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+Welcome to the user manual for [Your Product/Software Name], developed to enable algorithmic trading in the Panoptic Protocol ~\cite{panopticXYZ}. 
+This document will guide you through the features and functionalities of the product.
+
+\section{Installation}
+\subsection{System Requirements}
+List the system requirements here.
+
+\subsection{Installation Steps}
+Provide step-by-step installation instructions here.
+
+\subsubsection{Install Python Panoptic Helpers for Strategy Scripts}
+\noindent 
+\texttt{conda activate hummingbot}\\
+\texttt{cd gateway/strategies/panopticHelpers}\\
+\texttt{pip install matplotlib}\\
+\texttt{pip install .}
+
+\section{Configuration}
+Explain how to configure the product after installation.
+
+\section{Usage}
+\subsection{Basic Usage}
+Describe the basic usage of the product.
+
+\section{Options Math}
+\subsection{TradFi Math}
+\subsection{Uniswap Math}
+
+Critical references for this section: \cite{uniswapV3MathPrimer1,uniswapV3MathPrimer2}
+
+Definitions of input paramters: 
+\begin{itemize}
+    \item $\ell$:  liquidiy [NonFungiblePositionManager$\rightarrow$positions(tokenId)]
+    \item $i_u$: tickUpper [NonFungiblePositionManager$\rightarrow$positions(tokenId)]
+    \item $i_l$: tickLower [NonFungiblePositionManager$\rightarrow$positions(tokenId)]
+    \item $\sqrt{P}$: sqrtPriceX96 [UniswapV3Pool$\rightarrow$slot0()] 
+\end{itemize}
+
+Definitions of derived paramters: 
+\begin{itemize}
+    \item $i_c$: current tick 
+    \item $P_c$: price at the current tick, $i_c$
+    \item $P_u$: price at the tick upper location, $i_u$
+    \item $P_l$: price at the tick lower location, $i_l$ 
+\end{itemize}
+
+To convert from a ``Q-number'' (e.g. `sqrtPriceX96' is a $Q=96$ number) to a decimal: 
+\begin{equation}
+    X_{\rm decimal} \equiv \frac{X_Q}{2^Q}
+\end{equation}
+
+To calculate the current tick from the `sqrtPriceX96' (i.e. price): 
+\begin{equation}
+    \frac{\sqrt{P}}{2^{96}} = 1.001^{i_c}
+\end{equation}
+
+The condition of $i_c$ being "in-range" is defined by: 
+\begin{equation}
+    i_l \leq i_c < i_u
+\end{equation}
+Note, however, in some of the example trading strategies we may reference a slightly different definition, 
+where we calculate the tick locations immediately above ($i_{c+}$) and below ($i_{c-}$) the current tick 
+($i_c$) and define the position as out-of-range if $i_{c-} > i_u$ or $i_{c+} < i_l$. 
+
+
+To calculate token holdings FOR AN IN-RANGE POSITION: 
+\begin{equation}
+    x_{\rm token0} = \ell \frac{\sqrt{P_u} - \sqrt{P_c}}{\sqrt{P_u P_c}}
+\end{equation}
+\begin{equation}
+    x_{\rm token1} = \ell (\sqrt{P_c}-\sqrt{P_l})
+\end{equation}
+
+To calculate token holdings FOR AN OUT-OF-RANGE POSITION ABOVE THE CURRENT TICK (i.e. $P_c < P_l < P_u$):
+\begin{equation}
+    x_{\rm token0} = \ell \frac{\sqrt{P_u} - \sqrt{P_l}}{\sqrt{P_u P_l}}
+\end{equation}
+\begin{equation}
+    x_{\rm token1} = 0
+\end{equation}
+
+To calculate token holdings FOR AN OUT-OF-RANGE POSITION BELOW THE CURRENT TICK (i.e. $P_c > P_u > P_l$):
+\begin{equation}
+    x_{\rm token0} = 0
+\end{equation}
+\begin{equation}
+    x_{\rm token1} = \ell (\sqrt{P_u}-\sqrt{P_l})
+\end{equation}
+
+\subsection{Panoptic Math}
+
+\subsection{Advanced Features}
+Detail any advanced features and how to use them.
+
+\section{Troubleshooting}
+Provide solutions to common problems users might encounter.
+
+\section{FAQ}
+List frequently asked questions and their answers.
+
+\section{Contact Information}
+Provide contact information for further support.
+
+\appendix
+\section{Appendix}
+Include any additional information or resources here.
+
+\bibliography{references}
+\bibliographystyle{apsrev4-1}
+
+\end{document}
