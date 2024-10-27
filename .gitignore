@@ -16,5 +16,10 @@ package-lock.json
 .vscode/
 .history
 
+# Python
+strategies/panopticHelpers/panopticHelpers.egg-info
+strategies/panopticHelpers/build
+*.pyc
+
 # Yarn
 yarn-error.log
