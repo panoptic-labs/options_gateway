@@ -47,7 +47,7 @@ contractAddresses:
         # PanopticFactory - creates/manages new Panoptic Pools.
         PanopticFactory: '0x06EDd7cB13237577c27d360E1E081A4143f3A77c'
         # PanopticHelper - periphery contract to help format inputs and outputs.
-        PanopticHelper: '0x4Eba5eFB7754746D564D1Ef7a79aCB365C5D27Ed'
+        PanopticHelper: '0x4eba5efb7754746d564d1ef7a79acb365c5d27ed'
         # UniswapMigrator - helper contract to assist with mass-un-LPing from Uniswap, to re-LP via the SFPM.
         UniswapMigrator: '0xb5cf92427ff8b388bb333c074ed4bf961683b282'
         # PanopticTokenIdLibrary - Library contract to help with token ID management.

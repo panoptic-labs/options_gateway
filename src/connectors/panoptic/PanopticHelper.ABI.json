@@ -1,5 +1,5 @@
 {
-    "address": "0x4acc8a06e7567f3a40a53d3254ad5888b22f902e",
+    "address": "0x4eba5efb7754746d564d1ef7a79acb365c5d27ed",
     "abi": [
         {
             "inputs": [
@@ -14,8 +14,73 @@
         },
         {
             "inputs": [],
+            "name": "CastingError",
+            "type": "error"
+        },
+        {
+            "inputs": [],
             "name": "InvalidTick",
             "type": "error"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "parameterType",
+                    "type": "uint256"
+                }
+            ],
+            "name": "InvalidTokenIdParameter",
+            "type": "error"
+        },
+        {
+            "inputs": [],
+            "name": "TicksNotInitializable",
+            "type": "error"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "contract PanopticPool",
+                    "name": "pool",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "account",
+                    "type": "address"
+                },
+                {
+                    "internalType": "TokenId[]",
+                    "name": "positionIdList",
+                    "type": "uint256[]"
+                }
+            ],
+            "name": "checkCollateral",
+            "outputs": [
+                {
+                    "internalType": "uint256[4]",
+                    "name": "collateralBalances0",
+                    "type": "uint256[4]"
+                },
+                {
+                    "internalType": "uint256[4]",
+                    "name": "requiredCollaterals0",
+                    "type": "uint256[4]"
+                },
+                {
+                    "internalType": "uint256[4]",
+                    "name": "collateralBalances1",
+                    "type": "uint256[4]"
+                },
+                {
+                    "internalType": "uint256[4]",
+                    "name": "requiredCollaterals1",
+                    "type": "uint256[4]"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
         },
         {
             "inputs": [
@@ -35,11 +100,6 @@
                     "type": "int24"
                 },
                 {
-                    "internalType": "uint256",
-                    "name": "tokenType",
-                    "type": "uint256"
-                },
-                {
                     "internalType": "TokenId[]",
                     "name": "positionIdList",
                     "type": "uint256[]"
@@ -49,12 +109,22 @@
             "outputs": [
                 {
                     "internalType": "uint256",
-                    "name": "",
+                    "name": "collateralBalance0",
                     "type": "uint256"
                 },
                 {
                     "internalType": "uint256",
-                    "name": "",
+                    "name": "requiredCollateral0",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "collateralBalance1",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "requiredCollateral1",
                     "type": "uint256"
                 }
             ],
@@ -117,7 +187,7 @@
             "outputs": [
                 {
                     "internalType": "int24",
-                    "name": "",
+                    "name": "medianTick",
                     "type": "int24"
                 }
             ],
@@ -1130,6 +1200,142 @@
         {
             "inputs": [
                 {
+                    "internalType": "contract PanopticPool",
+                    "name": "pool",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "account",
+                    "type": "address"
+                },
+                {
+                    "internalType": "int24",
+                    "name": "atTick",
+                    "type": "int24"
+                },
+                {
+                    "internalType": "TokenId[]",
+                    "name": "positionIdList",
+                    "type": "uint256[]"
+                }
+            ],
+            "name": "getPortfolioValue",
+            "outputs": [
+                {
+                    "internalType": "int256",
+                    "name": "value0",
+                    "type": "int256"
+                },
+                {
+                    "internalType": "int256",
+                    "name": "value1",
+                    "type": "int256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "contract PanopticPool",
+                    "name": "pool",
+                    "type": "address"
+                },
+                {
+                    "internalType": "TokenId",
+                    "name": "tokenId",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "int24",
+                    "name": "atTick",
+                    "type": "int24"
+                }
+            ],
+            "name": "getRequiredBase",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "contract PanopticPool",
+                    "name": "pool",
+                    "type": "address"
+                },
+                {
+                    "internalType": "int24",
+                    "name": "atTick",
+                    "type": "int24"
+                },
+                {
+                    "internalType": "TokenId",
+                    "name": "tokenId",
+                    "type": "uint256"
+                }
+            ],
+            "name": "optimizeRiskPartners",
+            "outputs": [
+                {
+                    "internalType": "TokenId",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "contract PanopticPool",
+                    "name": "pool",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "account",
+                    "type": "address"
+                },
+                {
+                    "internalType": "TokenId",
+                    "name": "tokenId",
+                    "type": "uint256"
+                }
+            ],
+            "name": "optionPositionInfo",
+            "outputs": [
+                {
+                    "internalType": "uint128",
+                    "name": "",
+                    "type": "uint128"
+                },
+                {
+                    "internalType": "uint64",
+                    "name": "",
+                    "type": "uint64"
+                },
+                {
+                    "internalType": "uint64",
+                    "name": "",
+                    "type": "uint64"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
                     "internalType": "contract IUniswapV3Pool",
                     "name": "univ3pool",
                     "type": "address"
@@ -1215,6 +1421,19 @@
                 }
             ],
             "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "TokenId",
+                    "name": "self",
+                    "type": "uint256"
+                }
+            ],
+            "name": "validateTokenId",
+            "outputs": [],
+            "stateMutability": "pure",
             "type": "function"
         }
     ]
