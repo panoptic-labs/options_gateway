@@ -1,6 +1,5 @@
 import {
   isFloatString,
-  isFractionString,
   mkValidator,
   mkRequestValidator,
   RequestValidator,
