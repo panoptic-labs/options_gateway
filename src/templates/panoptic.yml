@@ -1,7 +1,3 @@
-# allowedSlippage: how much the execution price is allowed to move unfavorably from the trade
-# execution price. It uses a rational number for precision.
-allowedSlippage: '1/100'
-
 # The estimated gas for a transaction is the `ethers` estimate for the transaction, multiplied by this factor.
 gasLimitCushionFactor: 1.5
 

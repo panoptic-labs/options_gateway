@@ -3,7 +3,6 @@ import { ConfigManagerV2 } from '../../services/config-manager-v2';
 
 export namespace PanopticConfig {
   export interface NetworkConfig {
-    allowedSlippage: string;
     absoluteGasLimit: number;
     gasLimitCushionFactor: number; 
     subgraphUrl: string;
@@ -23,7 +22,6 @@ export namespace PanopticConfig {
   }
 
   export const config: NetworkConfig = {
-    allowedSlippage: ConfigManagerV2.getInstance().get('panoptic.allowedSlippage'),
     gasLimitCushionFactor: ConfigManagerV2.getInstance().get('panoptic.gasLimitCushionFactor'),
     absoluteGasLimit: ConfigManagerV2.getInstance().get(`panoptic.absoluteGasLimit`),
     subgraphUrl: ConfigManagerV2.getInstance().get('panoptic.subgraph.endpoint'),
