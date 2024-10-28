@@ -16,6 +16,7 @@ import {
   maxWithdraw,
   numberOfPositions,
   querySubgraph,
+  checkCollateral,
   createBigLizard,
   createCallCalendarSpread,
   createCallDiagonalSpread,
@@ -101,6 +102,8 @@ import {
   GetPoolDataResponse,
   MaxWithdrawResponse,
   NumberOfPositionsResponse,
+  CheckCollateralRequest,
+  CheckCollateralResponse,
   CreateBigLizardRequest,
   CreateCallCalendarSpreadRequest,
   CreateCallDiagonalSpreadRequest,
@@ -222,6 +225,18 @@ export namespace OptionsRoutes {
         res: Response<QuerySubgraphResponse | Error, {}>
       ) => {
         res.status(200).json(await querySubgraph(req.body));
+      }
+    )
+  );
+
+  router.post(
+    '/checkCollateral',
+    asyncHandler(
+      async (
+        req: Request<{}, {}, CheckCollateralRequest>,
+        res: Response<CheckCollateralResponse | Error, {}>
+      ) => {
+        res.status(200).json(await checkCollateral(req.body));
       }
     )
   );

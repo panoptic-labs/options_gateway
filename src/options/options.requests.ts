@@ -120,6 +120,20 @@ export interface CreatePositionRequest extends PanopticRequest{
   address: string;
 }
 
+export interface CheckCollateralRequest extends PanopticRequest{
+  panopticPool: string; 
+  address: string; 
+  atTick: number; 
+  positionIdList: string[]; 
+}
+
+export interface CheckCollateralResponse{
+  collateralBalance0: number;
+  requiredCollateral0: number; 
+  collateralBalance1: number;
+  requiredCollateral1: number;
+}
+
 export interface CreateBigLizardRequest extends CreatePositionRequest {
   width: number;
   longCallStrike: number;

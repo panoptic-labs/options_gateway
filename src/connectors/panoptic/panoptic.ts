@@ -20,9 +20,9 @@ import semiFungiblePositionManagerAbi from './SFPM.ABI.json';
 import axios, { AxiosResponse } from 'axios';
 import { 
   PositionLegInformation, 
-  CreatePositionResponse 
+  CreatePositionResponse, 
+  CheckCollateralResponse
 } from '../../options/options.requests';
-
 export class Panoptic {
   private static _instances: { [name: string]: Panoptic };
   private chainInstance;
@@ -405,6 +405,32 @@ export class Panoptic {
   }
 
   // PanopticHelper interactions
+  async checkCollateral(
+    wallet: Wallet, 
+    panopticPool: string, 
+    atTick: number, 
+    positionIdList: string[]
+  ): Promise<CheckCollateralResponse | Error> { 
+    try {
+      const panopticHelperAddress = this.PanopticHelper;
+      const panopticHelperContract = new Contract(panopticHelperAddress, panopticHelperAbi.abi, wallet);
+      const response = await panopticHelperContract['checkCollateral(address,address,int24,uint256[])'](
+        panopticPool, 
+        wallet.address, 
+        atTick,
+        positionIdList
+      );
+      return {
+        collateralBalance0: response.collateralBalance0,
+        requiredCollateral0: response.requiredCollateral0,
+        collateralBalance1: response.collateralBalance1,
+        requiredCollateral1: response.requiredCollateral1,
+      }
+    } catch (error) { 
+      return new Error("Error on checkCollateral: " + (error as Error).message)
+    }
+  }
+
   async createBigLizard(
     wallet: Wallet,
     univ3pool: string,

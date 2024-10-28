@@ -15,6 +15,8 @@ import {
   QueryPriceResponse,
   QuerySubgraphRequest,
   QuerySubgraphResponse,
+  CheckCollateralRequest,
+  CheckCollateralResponse,
   CreateBigLizardRequest,
   CreateCallCalendarSpreadRequest,
   CreateCallDiagonalSpreadRequest,
@@ -96,6 +98,7 @@ import {
   maxWithdraw as panopticMaxWithdraw,
   numberOfPositions as panopticNumberOfPositions,
   querySubgraph as panopticQuerySubgraph,
+  checkCollateral as panopticCheckCollateral,
   createBigLizard as panopticCreateBigLizard,
   createCallCalendarSpread as panopticCreateCallCalendarSpread,
   createCallDiagonalSpread as panopticCreateCallDiagonalSpread,
@@ -239,6 +242,21 @@ export async function querySubgraph(req: QuerySubgraphRequest): Promise<QuerySub
     );
   if (connector instanceof Panoptic) {
     return panopticQuerySubgraph(connector, req);
+  } else {
+    return new Error(`Method undefined on this connector, or no valid connector.`);
+  }
+}
+
+export async function checkCollateral(req: CheckCollateralRequest): Promise<CheckCollateralResponse | Error> {
+  const chain = await getInitializedChain<Ethereumish>(req.chain, req.network);
+  const connector: Panoptic = 
+    await getConnector<Panoptic>(
+      req.chain, 
+      req.network, 
+      req.connector
+    );
+  if (connector instanceof Panoptic) {
+    return panopticCheckCollateral(<Ethereumish>chain, connector, req);
   } else {
     return new Error(`Method undefined on this connector, or no valid connector.`);
   }

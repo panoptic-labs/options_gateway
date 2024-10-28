@@ -27,6 +27,8 @@ import {
   QueryPriceResponse,
   QuerySubgraphRequest,
   QuerySubgraphResponse,
+  CheckCollateralRequest,
+  CheckCollateralResponse,
   CreateBigLizardRequest,
   CreateCallCalendarSpreadRequest,
   CreateCallDiagonalSpreadRequest,
@@ -308,6 +310,28 @@ export async function querySubgraph(
 }
 
 // PanopticHelper interactions
+export async function checkCollateral(  
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: CheckCollateralRequest
+): Promise<CheckCollateralResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.checkCollateral(
+    wallet,
+    req.panopticPool,
+    req.atTick,
+    req.positionIdList
+  );
+
+  if (result instanceof Error) {
+    logger.error(`Error executing checkCollateral: ${result.message}`);
+    return result;
+  }
+
+  return result
+}
+
+
 export async function createBigLizard(
   ethereumish: Ethereumish,
   panopticish: Panoptic,
