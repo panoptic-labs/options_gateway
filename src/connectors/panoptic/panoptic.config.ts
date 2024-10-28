@@ -6,7 +6,6 @@ export namespace PanopticConfig {
     allowedSlippage: string;
     absoluteGasLimit: number;
     gasLimitCushionFactor: number; 
-    ttl: number;
     subgraphUrl: string;
     lowestTick: number;
     highestTick: number;
@@ -27,7 +26,6 @@ export namespace PanopticConfig {
     allowedSlippage: ConfigManagerV2.getInstance().get('panoptic.allowedSlippage'),
     gasLimitCushionFactor: ConfigManagerV2.getInstance().get('panoptic.gasLimitCushionFactor'),
     absoluteGasLimit: ConfigManagerV2.getInstance().get(`panoptic.absoluteGasLimit`),
-    ttl: ConfigManagerV2.getInstance().get('panoptic.ttl'),
     subgraphUrl: ConfigManagerV2.getInstance().get('panoptic.subgraph.endpoint'),
     lowestTick: ConfigManagerV2.getInstance().get('panoptic.lowestTick'),
     highestTick: ConfigManagerV2.getInstance().get('panoptic.highestTick'),

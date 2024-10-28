@@ -2,10 +2,6 @@
 # execution price. It uses a rational number for precision.
 allowedSlippage: '1/100'
 
-# ttl: how long a trade is valid in seconds. TODO: This is a placeholder; Panoptic has no such
-# concept. We'll remove this eventually.
-ttl: 300
-
 # The estimated gas for a transaction is the `ethers` estimate for the transaction, multiplied by this factor.
 gasLimitCushionFactor: 1.5
 

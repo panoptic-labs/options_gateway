@@ -11,9 +11,6 @@
     "absoluteGasLimit": {
       "type": "integer"
     },
-    "ttl": {
-      "type": "integer"
-    },
     "lowestTick": {
       "type": "integer"
     },
@@ -77,7 +74,6 @@
     "allowedSlippage",
     "gasLimitCushionFactor",
     "absoluteGasLimit",
-    "ttl",
     "contractAddresses"
   ]
 }
