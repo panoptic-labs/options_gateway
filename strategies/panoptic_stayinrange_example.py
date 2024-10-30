@@ -7,7 +7,8 @@ from hummingbot.client.settings import GatewayConnectionSetting
 # from hummingbot.core.event.events import TradeType
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 from hummingbot.core.utils.async_utils import safe_ensure_future
-from hummingbot.strategy.script_strategy_base import Decimal, ScriptStrategyBase# TODO
+from hummingbot.strategy.script_strategy_base import Decimal, ScriptStrategyBase
+
 # TODO
 # def get_unsigned_tx_payload_for_mint(
 #     panoptic_pool: address,
@@ -98,14 +99,17 @@ class TradePanoptions(ScriptStrategyBase):
         self.request_payload.update(
             {
                 "panopticPool": self.request_payload["panopticPoolAddress"], #redundant 
-                "width": 4,
-                "strike": int(np.floor(self.tick_location)),
+                "width": ph.timescale_to_width("1H", self.tickSpacing), 
+                "strike": ph.get_valid_tick(int(np.floor(self.tick_location)), self.tickSpacing, self.tickSpacing*ph.timescale_to_width("1H", self.tickSpacing)),
                 "asset": 0,
                 "isLong": 0,
                 "optionRatio": 1,
                 "start": 0, 
             }
         )
+        self.logger().info(f"Tick spacing: {self.tickSpacing}")
+        self.logger().info(f"Width correspoinding to 1H timescale: {self.request_payload['width']}")
+        self.logger().info(f"Current strike: {self.tick_location}, Valid strike: {self.request_payload['strike']}")
 
         bad_positions = []
         if len(self.open_positions)>0:
@@ -159,7 +163,16 @@ class TradePanoptions(ScriptStrategyBase):
                 fail_silently=False
             )
             self.logger().info(f"Creating Straddle: {response['tokenId']}")
-            new_position = response['tokenId']
+            self.logger().info(f"      |-> UniV3 Pool: {self.request_payload['univ3pool']}")
+            self.logger().info(f"      |-> width: {self.request_payload['width']}")
+            self.logger().info(f"      |-> strike: {self.request_payload['strike']}")
+            self.logger().info(f"      |-> asset: {self.request_payload['asset']}")
+            self.logger().info(f"      |-> isLong: {self.request_payload['isLong']}")
+            self.logger().info(f"      |-> optionRatio: {self.request_payload['optionRatio']}")
+            self.logger().info(f"      |-> start: {self.request_payload['start']}")
+            new_position = hex(int(response['tokenId']))
+            self.logger().info(f"Hex token ID: {new_position}")
+    
             self.open_positions.append(new_position)
             self.request_payload.update({
                 "panopticPool": self.request_payload["panopticPoolAddress"], #redundant 
@@ -168,25 +181,28 @@ class TradePanoptions(ScriptStrategyBase):
                 "effectiveLiquidityLimit": 0
             })
 
-            # self.logger().info(f"Checking collateral...")
-            # self.logger().info(f"POST /options/checkCollateral [ connector: {self.connector} ]")
-            # closest_tick = min(self.tick_locations, key=lambda x: abs(x - self.tick_location))
-            # self.request_payload["atTick"] = closest_tick
-            # self.logger().info(f"Closest tick: {closest_tick}")
-            # response = await GatewayHttpClient.get_instance().api_request(
-            #     method="post",
-            #     path_url="options/checkCollateral",
-            #     params=self.request_payload,
-            #     fail_silently=False
-            # )
-            # self.collateral_balance_token0 = response['collateralBalance0']
-            # self.collateral_balance_token1 = response['collateralBalance1']
-            # self.required_collateral_token0 = response['requiredCollateral0']
-            # self.required_collateral_token1 = response['requiredCollateral1']
-            # self.logger().info(f"Collateral balance token0: {self.collateral_balance_token0}")
-            # self.logger().info(f"Required collateral token0: {self.required_collateral_token0}")
-            # self.logger().info(f"Collateral balance token1: {self.collateral_balance_token1}")
-            # self.logger().info(f"Required collateral token1: {self.required_collateral_token1}")
+            self.logger().info(f"Checking collateral...")
+            self.logger().info(f"POST /options/checkCollateral [ connector: {self.connector} ]")
+            closest_tick = min(self.tick_locations, key=lambda x: abs(x - self.tick_location))
+            self.request_payload["atTick"] = closest_tick
+            self.logger().info(f"panopticPool: {self.request_payload['panopticPool']}")
+            self.logger().info(f"atTick: {self.request_payload['atTick']}")
+            self.logger().info(f"positionIdList: {self.request_payload['positionIdList']}")
+            response = await GatewayHttpClient.get_instance().api_request(
+                method="post",
+                path_url="options/checkCollateral",
+                params=self.request_payload,
+                fail_silently=False
+            )
+            
+            self.collateral_balance_token0 = int(response['collateralBalance0']['hex'], 16)
+            self.collateral_balance_token1 = int(response['collateralBalance1']['hex'], 16)
+            self.required_collateral_token0 = int(response['requiredCollateral0']['hex'], 16)
+            self.required_collateral_token1 = int(response['requiredCollateral1']['hex'], 16)
+            self.logger().info(f"Collateral balance token0: {self.collateral_balance_token0}")
+            self.logger().info(f"Required collateral token0: {self.required_collateral_token0}")
+            self.logger().info(f"Collateral balance token1: {self.collateral_balance_token1}")
+            self.logger().info(f"Required collateral token1: {self.required_collateral_token1}")
 
             # tradeData = await GatewayHttpClient.get_instance().api_request(
             #     method="post",
