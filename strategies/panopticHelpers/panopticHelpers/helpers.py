@@ -133,14 +133,11 @@ def width_to_timescale(width, pool_tick_spacing):
         return '1Y'
     else:
         raise ValueError("Invalid width. Supported widths are: 120, 720, 2400, 4800, 16000")
-    
-import math
-
 def get_valid_tick(current_tick: int, tick_spacing: int, width: int) -> int:
-    min_tick = math.ceil(UNI_MIN_TICK / tick_spacing) * tick_spacing
-    max_tick = math.floor(UNI_MAX_TICK / tick_spacing) * tick_spacing
+    min_tick = np.ceil(UNI_MIN_TICK / tick_spacing) * tick_spacing
+    max_tick = np.floor(UNI_MAX_TICK / tick_spacing) * tick_spacing
 
-    next_tick = math.floor(current_tick / tick_spacing) * tick_spacing
+    next_tick = np.floor(current_tick / tick_spacing) * tick_spacing
     tick_lower = next_tick - width // 2
     tick_upper = next_tick + width // 2
 
