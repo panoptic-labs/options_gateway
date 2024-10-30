@@ -3,6 +3,11 @@ import os
 import datetime
 import matplotlib.pyplot as plt
 
+from .constants import (
+    UNI_MIN_TICK, 
+    UNI_MAX_TICK
+)
+
 def helloWorld():
     print("Hello World!")
     return 1
@@ -99,5 +104,58 @@ def generate_spot_plot(file_location):
     plt.savefig(plot_location)
     plt.close()
 
-
     return plot_location
+
+def timescale_to_width(timescale, pool_tick_spacing):
+    if timescale == '1H':
+        return int(np.ceil(120 / pool_tick_spacing))
+    elif timescale == '1D':
+        return int(np.ceil(720 / pool_tick_spacing))
+    elif timescale == '1W':
+        return int(np.ceil(2400 / pool_tick_spacing))
+    elif timescale == '1M':
+        return int(np.ceil(4800 / pool_tick_spacing))
+    elif timescale == '1Y':
+        return int(np.ceil(16000 / pool_tick_spacing)) 
+    else:
+        raise ValueError("Invalid timescale. Supported timescales are: 1H, 1D, 1W, 1M, 1Y")
+
+def width_to_timescale(width, pool_tick_spacing):
+    if width == np.ceil(120 / pool_tick_spacing):
+        return '1H'
+    elif width == np.ceil(720 / pool_tick_spacing):
+        return '1D'
+    elif width == np.ceil(2400 / pool_tick_spacing):
+        return '1W'
+    elif width == np.ceil(4800 / pool_tick_spacing):
+        return '1M'
+    elif width == np.ceil(16000 / pool_tick_spacing):
+        return '1Y'
+    else:
+        raise ValueError("Invalid width. Supported widths are: 120, 720, 2400, 4800, 16000")
+    
+import math
+
+def get_valid_tick(current_tick: int, tick_spacing: int, width: int) -> int:
+    min_tick = math.ceil(UNI_MIN_TICK / tick_spacing) * tick_spacing
+    max_tick = math.floor(UNI_MAX_TICK / tick_spacing) * tick_spacing
+
+    next_tick = math.floor(current_tick / tick_spacing) * tick_spacing
+    tick_lower = next_tick - width // 2
+    tick_upper = next_tick + width // 2
+
+    # Ensure calculated tick_lower has floor of closest valid tick to min_tick and tick_upper has ceiling at closest valid tick to max_tick
+    if tick_lower < min_tick:
+        next_tick = next_tick + (min_tick - tick_lower)
+        tick_lower = next_tick - width // 2
+        tick_upper = next_tick + width // 2
+
+    if tick_upper > max_tick:
+        next_tick = next_tick - (tick_upper - max_tick)
+        tick_lower = next_tick - width // 2
+        tick_upper = next_tick + width // 2
+
+    if ((tick_upper % tick_spacing != 0) or (tick_lower % tick_spacing != 0)):
+        next_tick = next_tick + tick_spacing // 2 if next_tick < current_tick else next_tick - tick_spacing // 2
+
+    return next_tick
