@@ -17,12 +17,18 @@ import {
   CalculateDeltaResponse,
   CalculateGammaRequest,
   CalculateGammaResponse,
+  GetTokenAddressRequest,
+  GetTokenAddressResponse,
   GreekQueryRequest,
   GreekQueryResponse,
   QueryPositionsRequest,
   QueryPositionsResponse,
+  QueryPriceRequest,
+  QueryPriceResponse,
   QuerySubgraphRequest,
   QuerySubgraphResponse,
+  CheckCollateralRequest,
+  CheckCollateralResponse,
   CreateBigLizardRequest,
   CreateCallCalendarSpreadRequest,
   CreateCallDiagonalSpreadRequest,
@@ -42,6 +48,8 @@ import {
   CreateSuperBearRequest,
   CreateSuperBullRequest,
   CreateZEEHBSRequest,
+  UnwrapTokenIdRequest,
+  UnwrapTokenIdResponse,
   CreateAddLegsRequest,
   CreatePositionResponse,
   CalculateAccumulatedFeesBatchRequest,
@@ -78,7 +86,15 @@ import {
   WithdrawResponse,
   GetAccountLiquidityResponse,
   GetAccountPremiumResponse,
-  GetAccountFeesBaseResponse
+  GetAccountFeesBaseResponse,
+  GetPanopticPoolRequest,
+  GetPanopticPoolResponse,
+  CheckUniswapV3PoolRequest,
+  CheckUniswapV3PoolResponse,
+  GetSpotPriceRequest, 
+  GetSpotPriceResponse,
+  GetTickSpacingAndInitializedTicksRequest,
+  GetTickSpacingAndInitializedTicksResponse,
 } from '../../options/options.requests';
 import { Panoptic } from '../panoptic/panoptic';
 import { gasCostInEthString } from '../../services/base';
@@ -173,6 +189,23 @@ export async function calculateGamma(
   };
 }
 
+export async function getTokenAddress(
+  panopticish: Panoptic,
+  req: GetTokenAddressRequest 
+): Promise<GetTokenAddressResponse | Error> {
+  const result = await panopticish.getTokenAddress(req.tokenSymbol); 
+
+  if (result instanceof Error) {
+    logger.error(`Error executing getTokenAddress: ${result.message}`);
+    return result;
+  }
+
+  return {
+    tokenAddress: result["tokenAddress"],
+    tokenDecimals: result["tokenDecimals"]
+  };
+}
+
 // TODO: Eventually, we'll allow users to make 1 gateway call to get all 5 greeks, rather than
 //       calling calculateDelta, then calculateGamma, etc...
 //       NOT YET FUNCTIONAL
@@ -232,6 +265,34 @@ export async function queryPositions(
   };
 }
 
+export async function queryPrice(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: QueryPriceRequest
+): Promise<QueryPriceResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.queryPrice(
+    wallet,
+    req.uniV3Pool
+  );
+
+  if (result instanceof Error) {
+    logger.error(`Error executing queryPrice: ${result.message}`);
+    return result;
+  }
+
+  const feeTier = result.data['data']['pool']['feeTier'];
+  const sqrtPrice = result.data['data']['pool']['sqrtPrice'];
+  const liquidity = result.data['data']['pool']['liquidity'];
+
+  return {
+    queryResponse: JSON.stringify(result.data), 
+    feeTier: feeTier,
+    sqrtPrice: sqrtPrice,
+    liquidity: liquidity
+  };
+}
+
 export async function querySubgraph(
   panopticish: Panoptic,
   req: QuerySubgraphRequest
@@ -249,6 +310,28 @@ export async function querySubgraph(
 }
 
 // PanopticHelper interactions
+export async function checkCollateral(  
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: CheckCollateralRequest
+): Promise<CheckCollateralResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.checkCollateral(
+    wallet,
+    req.panopticPool,
+    req.atTick,
+    req.positionIdList
+  );
+
+  if (result instanceof Error) {
+    logger.error(`Error executing checkCollateral: ${result.message}`);
+    return result;
+  }
+
+  return result
+}
+
+
 export async function createBigLizard(
   ethereumish: Ethereumish,
   panopticish: Panoptic,
@@ -269,9 +352,7 @@ export async function createBigLizard(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createCallCalendarSpread(
@@ -296,9 +377,7 @@ export async function createCallCalendarSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createCallDiagonalSpread(
@@ -324,9 +403,7 @@ export async function createCallDiagonalSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createCallRatioSpread(
@@ -351,9 +428,7 @@ export async function createCallRatioSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createCallSpread(
@@ -378,9 +453,7 @@ export async function createCallSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createCallZEBRASpread(
@@ -405,9 +478,7 @@ export async function createCallZEBRASpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createIronButterfly(
@@ -430,9 +501,7 @@ export async function createIronButterfly(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createIronCondor(
@@ -456,9 +525,7 @@ export async function createIronCondor(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createJadeLizard(
@@ -482,9 +549,7 @@ export async function createJadeLizard(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createPutCalendarSpread(
@@ -509,9 +574,7 @@ export async function createPutCalendarSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createPutDiagonalSpread(
@@ -537,9 +600,7 @@ export async function createPutDiagonalSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createPutRatioSpread(
@@ -564,9 +625,7 @@ export async function createPutRatioSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createPutSpread(
@@ -591,9 +650,7 @@ export async function createPutSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createPutZEBRASpread(
@@ -618,9 +675,7 @@ export async function createPutZEBRASpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createStraddle(
@@ -645,9 +700,7 @@ export async function createStraddle(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createStrangle(
@@ -673,9 +726,7 @@ export async function createStrangle(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createSuperBear(
@@ -699,9 +750,7 @@ export async function createSuperBear(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createSuperBull(
@@ -725,9 +774,7 @@ export async function createSuperBull(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createZEEHBS(
@@ -751,8 +798,28 @@ export async function createZEEHBS(
     return result;
   }
 
+  return result
+}
+
+export async function unwrapTokenId(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: UnwrapTokenIdRequest
+): Promise<UnwrapTokenIdResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.unwrapTokenId(
+    wallet,
+    req.tokenId
+  );
+
+  if (result instanceof Error) {
+    logger.error(`Error executing unwrapTokenId: ${result.message}`);
+    return result;
+  }
+
   return {
-    tokenId: result.tokenId
+    numberOfLegs: result.length,
+    legInfo: result
   };
 }
 
@@ -1444,7 +1511,91 @@ export async function addLeg(
     return result;
   }
 
+  return result
+}
+
+// PanopticFactory interactions
+
+export async function getPanopticPool(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: GetPanopticPoolRequest
+): Promise<GetPanopticPoolResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.getPanopticPool(
+    wallet,
+    req.uniswapV3PoolAddress
+  );
+
+  if (result instanceof Error) {
+    logger.error(`Error executing getPanopticPool: ${result.message}`);
+    return result;
+  }
+
   return {
-    tokenId: result.tokenId
+    panopticPoolAddress: result
   };
+}
+
+// Uniswap V3 interactions
+export async function checkUniswapPool(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: CheckUniswapV3PoolRequest
+): Promise<CheckUniswapV3PoolResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.checkUniswapPool(
+    wallet,
+    req.t0_address,
+    req.t1_address,
+    req.fee
+  );
+
+  if (result instanceof Error) {
+    logger.error(`Error executing checkUniswapPool: ${result.message}`);
+    return result;
+  }
+
+  return {
+    uniswapV3PoolAddress: result
+  };
+}
+
+// UniswapPool interactions
+export async function getSpotPrice(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: GetSpotPriceRequest
+): Promise<GetSpotPriceResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.getSpotPrice(
+    wallet,
+    req.uniswapV3PoolAddress,
+    req.token0Decimals,
+    req.token1Decimals
+  );
+  if (result instanceof Error) {
+    logger.error(`Error executing getSpotPrice: ${result.message}`);
+    return result;
+  }
+  return {
+    spotPrice: result
+  };
+}
+
+export async function getTickSpacingAndInitializedTicks(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: GetTickSpacingAndInitializedTicksRequest
+): Promise<GetTickSpacingAndInitializedTicksResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.getTickSpacingAndInitializedTicks(
+    wallet,
+    req.uniswapV3PoolAddress
+  );
+  if (result instanceof Error) {
+    logger.error(`Error executing getTickSpacingAndInitializedTicks: ${result.message}`);
+    return result;
+  }
+  return result
 }

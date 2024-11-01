@@ -14,7 +14,8 @@ absoluteGasLimit: 10000000
 
 subgraph:
   # The subgraph endpoint to query for Panoptic data.
-  endpoint: 'https://api.goldsky.com/api/public/project_cl9gc21q105380hxuh8ks53k3/subgraphs/panoptic-subgraph-sepolia/beta7/gn'
+  endpoint: 'https://api.goldsky.com/api/public/project_cl9gc21q105380hxuh8ks53k3/subgraphs/panoptic-subgraph-sepolia/beta7-prod/gn'
+  uniswapV3: 'https://gateway.thegraph.com/api/74addffbf73ae5d69396e8b0d778d2c1/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV'
 
 lowestTick: -887272
 highestTick: 887272
@@ -42,11 +43,11 @@ contractAddresses:
         ####################
         #
         # SemiFungiblePositionManager - manages Panoptic Uniswap LP positions.
-        SemiFungiblePositionManager: '0x60e2ecd11b82f382a6368e6244bc659ab4584171'
+        SemiFungiblePositionManager: '0x6CC590Da842a730FFe8189aFE9CC0EDB277986cD'
         # PanopticFactory - creates/manages new Panoptic Pools.
-        PanopticFactory: '0x17b393d0c5a27136dec50ac94715ccca1d8a0b0e'
+        PanopticFactory: '0x06EDd7cB13237577c27d360E1E081A4143f3A77c'
         # PanopticHelper - periphery contract to help format inputs and outputs.
-        PanopticHelper: '0x4acc8a06e7567f3a40a53d3254ad5888b22f902e'
+        PanopticHelper: '0x4eba5efb7754746d564d1ef7a79acb365c5d27ed'
         # UniswapMigrator - helper contract to assist with mass-un-LPing from Uniswap, to re-LP via the SFPM.
         UniswapMigrator: '0xb5cf92427ff8b388bb333c074ed4bf961683b282'
         # PanopticTokenIdLibrary - Library contract to help with token ID management.

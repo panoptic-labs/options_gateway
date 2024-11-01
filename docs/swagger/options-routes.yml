@@ -4,6 +4,41 @@ paths:
       tags:
         - 'options'
       summary: 'Create a position leg on tokenId'
+  /options/getPanopticPool:
+    post:
+      tags:
+        - 'options'
+      summary: 'Get Panoptic Pool address from corresonding Uniswap pool.'
+  /options/checkUniswapPool:
+    post:
+      tags:
+        - 'options'
+      summary: 'Get Uniswap Pool address from corresonding token addresses and fee tier.'
+  /options/getSpotPrice:
+    post:
+      tags:
+        - 'options'
+      summary: 'Get spot price on given Uniswap pool correcting for token decimals.'
+  /options/getTickSpacingAndInitializedTicks:
+    post:
+      tags:
+        - 'options'
+      summary: 'Get Uniswap pool tick spacing and locations.'
+  /options/getTokenAddress:
+    post:
+      tags:
+        - 'options'
+      summary: 'Get token address from symbol using lookup list.'
+  /options/queryPrice:
+    post:
+      tags:
+        - 'options'
+      summary: 'Get Uniswap pool price.'
+  /options/unwrapTokenId:
+    post:
+      tags:
+        - 'options'
+      summary: 'Deconstruct options position from tokenId.'
   /options/burn:
     post:
       tags:
