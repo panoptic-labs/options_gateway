@@ -24,9 +24,9 @@ Step 1: Get hummingbot set up:
 6. `./start`
 7. The Hummingbot UI should now present itself! You can now set a password.
 8. The Hummingbot Shell will now present itself. You can then `gateway generate-certs` to generate certificates and secure your Hummingbot instance.
-  a. You’ll be prompted to set a password and it’ll list the directory those certificates are stored in.
-  b. Copy the directory path it generates these certificates though.
-  c. For many users, this was `~/panoptic_hummingbot/certs`. This is just a certs folder in the same folder as your hummingbot repo.
+    1. You’ll be prompted to set a password and it’ll list the directory those certificates are stored in.
+    2. Copy the directory path it generates these certificates though.
+    3. For many users, this was `~/panoptic_hummingbot/certs`. This is just a certs folder in the same folder as your hummingbot repo.
 
 Step 2: Set up this fork of the Hummingbot Gateway:
 
@@ -36,7 +36,7 @@ Step 2: Set up this fork of the Hummingbot Gateway:
 4. `yarn build`
 5. Give permissions to the gateway setup script: `chmod a+x gateway-setup.sh`
 6. Then run it: `./gateway-setup.sh`
-7. It will prompt you to copy over the certs, enter the path (and possibly password) for those certs you just generated in (1)(g)(i). Enter the path.
+7. It will prompt you to copy over the certs, enter the path (and possibly password) for those certs you just generated in (8)(i). Enter the path.
 
 Step 3: Launch the Gateway:
 
