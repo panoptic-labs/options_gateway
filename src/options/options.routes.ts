@@ -6,6 +6,7 @@ import {
   addLeg,
   mint,
   burn,
+  burnAndMint,
   liquidate,
   getCollateralToken0,
   getCollateralToken1,
@@ -61,6 +62,8 @@ import {
   MintResponse,
   ExecuteBurnRequest,
   BurnResponse,
+  ExecuteBurnAndMintRequest,
+  BurnAndMintResponse,
   CalculateDeltaRequest,
   CalculateDeltaResponse,
   CalculateGammaRequest,
@@ -527,6 +530,20 @@ export namespace OptionsRoutes {
         // TODO: We need to iterate on this; they normally work but we changed up the request format.
         // validateBurnRequest(req.body);
         res.status(200).json(await burn(req.body));
+      }
+    )
+  );
+
+  router.post(
+    '/burnAndMint',
+    asyncHandler(
+      async (
+        req: Request<{}, {}, ExecuteBurnAndMintRequest>,
+        res: Response<BurnAndMintResponse | Error, {}>
+      ) => {
+        // TODO: Write validator for burnAndMint
+        // validateBurnAndMintRequest(req.body);
+        res.status(200).json(await burnAndMint(req.body));
       }
     )
   );

@@ -1069,6 +1069,70 @@ export class Panoptic {
     }
   }
 
+  async executeBurnAndMint(
+    wallet: Wallet,
+    panopticPool: string,
+    burnTokenId: BigNumber,
+    postburnPositionIdList: BigNumber[],
+    mintTokenId: BigNumber,
+    positionSize: BigNumber,
+    effectiveLiquidityLimit: BigNumber,
+    burnTickLimitLow: number = this.LOWEST_POSSIBLE_TICK,
+    burnTickLimitHigh: number = this.HIGHEST_POSSIBLE_TICK,
+    mintTickLimitLow: number = this.LOWEST_POSSIBLE_TICK,
+    mintTickLimitHigh: number = this.HIGHEST_POSSIBLE_TICK
+  ): Promise<ContractReceipt | Error> {
+    try {
+      const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
+
+      // Create mint position ID list by appending mintTokenId to postburnPositionIdList
+      const mintPositionIdList = [...postburnPositionIdList, mintTokenId];
+
+      // Encode the burn and mint calls
+      const burnCalldata = panopticPoolContract.interface.encodeFunctionData(
+        "burnOptions(uint256,uint256[],int24,int24)",
+        [burnTokenId, postburnPositionIdList, burnTickLimitLow, burnTickLimitHigh]
+      );
+
+      const mintCalldata = panopticPoolContract.interface.encodeFunctionData(
+        "mintOptions",
+        [mintPositionIdList, positionSize, effectiveLiquidityLimit, mintTickLimitLow, mintTickLimitHigh]
+      );
+
+      // Estimate gas for multicall
+      let gasEstimate: number;
+      try {
+        gasEstimate = (await panopticPoolContract.estimateGas.multicall(
+          [burnCalldata, mintCalldata],
+          { gasLimit: BigNumber.from(this.absoluteGasLimit) }
+        )).toNumber();
+      } catch (error) {
+        console.log("Unable to estimate gas. Using max allocation.");
+        gasEstimate = this.absoluteGasLimit/(this.gasLimitCushionFactor*this.gasLimitCushionFactor);
+      }
+
+      const gasLimit: number = Math.ceil(this.gasLimitCushionFactor * gasEstimate);
+      if (gasLimit > this.absoluteGasLimit) {
+        return new Error(
+          `Error on executeBurnAndMint: Gas limit exceeded, gas estimate limit (${gasLimit}) greater than tx cap (${this.absoluteGasLimit})...`
+        );
+      }
+
+      console.log("Using gas limit: ", gasLimit);
+
+      // Execute multicall
+      const tx: ContractTransaction = await panopticPoolContract.multicall(
+        [burnCalldata, mintCalldata],
+        { gasLimit: BigNumber.from(gasLimit) }
+      );
+
+      const receipt: ContractReceipt = await tx.wait();
+      return receipt;
+    } catch (error) {
+      return new Error("Error on executeBurnAndMint: " + (error as Error).message);
+    }
+  }
+
   async forceExercise(
     wallet: Wallet,
     panopticPool: string,

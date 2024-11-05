@@ -1,6 +1,8 @@
 import {
   ExecuteBurnRequest,
   BurnResponse,
+  ExecuteBurnAndMintRequest,
+  BurnAndMintResponse,
   CalculateDeltaRequest,
   CalculateDeltaResponse,
   CalculateGammaRequest,
@@ -87,6 +89,7 @@ import {
   addLeg as panopticAddLeg,
   mint as panopticMint,
   burn as panopticBurn,
+  burnAndMint as panopticBurnAndMint,
   forceExercise as panopticForceExercise,
   liquidate as panopticLiquidate,
   getCollateralToken0 as panopticGetCollateralToken0,
@@ -249,10 +252,10 @@ export async function querySubgraph(req: QuerySubgraphRequest): Promise<QuerySub
 
 export async function checkCollateral(req: CheckCollateralRequest): Promise<CheckCollateralResponse | Error> {
   const chain = await getInitializedChain<Ethereumish>(req.chain, req.network);
-  const connector: Panoptic = 
+  const connector: Panoptic =
     await getConnector<Panoptic>(
-      req.chain, 
-      req.network, 
+      req.chain,
+      req.network,
       req.connector
     );
   if (connector instanceof Panoptic) {
@@ -536,6 +539,23 @@ export async function burn(req: ExecuteBurnRequest): Promise<BurnResponse | Erro
 
   if (connector instanceof Panoptic) {
     return panopticBurn(<Ethereumish>chain, connector, req);
+  } else {
+    return new Error(`Method undefined on this connector, or no valid connector.`);
+  }
+}
+
+export async function burnAndMint(req: ExecuteBurnAndMintRequest): Promise<BurnAndMintResponse | Error> {
+  const chain = await getInitializedChain<Ethereumish>(req.chain, req.network);
+
+  const connector: Panoptic =
+    await getConnector<Panoptic>(
+      req.chain,
+      req.network,
+      req.connector
+    );
+
+  if (connector instanceof Panoptic) {
+    return panopticBurnAndMint(<Ethereumish>chain, connector, req);
   } else {
     return new Error(`Method undefined on this connector, or no valid connector.`);
   }

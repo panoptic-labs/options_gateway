@@ -12,6 +12,7 @@ import {
 import { logger } from '../../services/logger';
 import {
   ExecuteBurnRequest,
+  ExecuteBurnAndMintRequest,
   BurnResponse,
   CalculateDeltaRequest,
   CalculateDeltaResponse,
@@ -939,6 +940,61 @@ export async function burn(
     return new Error(`Unexpected error in burn function: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
+
+export async function burnAndMint(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: ExecuteBurnAndMintRequest
+): Promise<BurnResponse | Error> {
+  const startTimestamp: number = Date.now();
+  try {
+    const { wallet } = await txWriteData(ethereumish, req.address);
+    const gasPrice: number = ethereumish.gasPrice;
+    const tx: ContractReceipt | Error = await panopticish.executeBurnAndMint(
+      wallet,
+      req.panopticPool,
+      req.burnTokenId,
+      req.postburnPositionIdList,
+      req.mintTokenId,
+      req.positionSize,
+      req.effectiveLiquidityLimit,
+      req.burnTickLimitLow,
+      req.burnTickLimitHigh,
+      req.mintTickLimitLow,
+      req.mintTickLimitHigh,
+    );
+
+    if (tx instanceof Error) {
+      logger.error(`Error executing burn-and-mint multicall: ${tx.message}`);
+      return tx;
+    }
+
+    if (tx.transactionHash) {
+      await ethereumish.txStorage.saveTx(
+        ethereumish.chain,
+        ethereumish.chainId,
+        tx.transactionHash,
+        new Date(),
+        ethereumish.gasPrice
+      );
+    }
+
+    logger.info(
+      `Burn-and-mint has been executed, txHash is ${tx.transactionHash}, nonce is ${tx.transactionIndex}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
+    );
+
+    return {
+      tx: tx,
+      network: ethereumish.chain,
+      timestamp: startTimestamp,
+      txHash: tx.transactionHash,
+    };
+  } catch (error) {
+    logger.error(`Unexpected error in burn-and-mint multicall: ${error instanceof Error ? error.message : error}`);
+    return new Error(`Unexpected error in burn-and-mint multicall: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
 
 export async function forceExercise(
   ethereumish: Ethereumish,

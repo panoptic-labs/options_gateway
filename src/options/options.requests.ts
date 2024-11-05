@@ -357,6 +357,21 @@ export interface ExecuteBurnRequest extends PanopticPoolRequest {
   tickLimitHigh: number;
 }
 
+export interface ExecuteBurnAndMintRequest extends PanopticPoolRequest {
+  address: string;
+  chain: string;
+  network: string;
+  burnTokenId: BigNumber;
+  postburnPositionIdList: BigNumber[];
+  mintTokenId: BigNumber;
+  positionSize: BigNumber;
+  effectiveLiquidityLimit: BigNumber;
+  burnTickLimitLow: number;
+  burnTickLimitHigh: number;
+  mintTickLimitLow: number;
+  mintTickLimitHigh: number;
+}
+
 export interface CollateralTokenRequest extends PanopticPoolRequest {
   wallet: Wallet;
   address: string;
@@ -585,6 +600,8 @@ export interface MintResponse extends BroadcastedTxResponse{
   gasCost?: string; // : gasUsed
   other?: any
 }
+
+export interface BurnAndMintResponse extends BurnResponse {}
 
 export interface GetPanopticPoolRequest extends PanopticRequest{
   address: string;
