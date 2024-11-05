@@ -382,9 +382,7 @@ export class Panoptic {
     variables: Record<string, string | string[] | number | number[] | BigNumber | BigNumber[]>
   ): Promise<AxiosResponse | Error> {
     try {
-      let result = await axios.post(this.subgraphUrl, { query, variables });
-      console.dir(result, { depth: null });
-      return result
+      return await axios.post(this.subgraphUrl, { query, variables });
     } catch (error) {
       if (error instanceof Error) {
         return new Error("Error querying Panoptic Subgraph:" + error.message);
