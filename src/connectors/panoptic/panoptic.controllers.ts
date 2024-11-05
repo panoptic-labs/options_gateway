@@ -39,7 +39,7 @@ import {
   CreateIronCondorRequest,
   CreateJadeLizardRequest,
   CreatePutCalendarSpreadRequest,
-  CreatePutDiagonalSpreadRequest, 
+  CreatePutDiagonalSpreadRequest,
   CreatePutRatioSpreadRequest,
   CreatePutSpreadRequest,
   CreatePutZEBRASpreadRequest,
@@ -91,7 +91,7 @@ import {
   GetPanopticPoolResponse,
   CheckUniswapV3PoolRequest,
   CheckUniswapV3PoolResponse,
-  GetSpotPriceRequest, 
+  GetSpotPriceRequest,
   GetSpotPriceResponse,
   GetTickSpacingAndInitializedTicksRequest,
   GetTickSpacingAndInitializedTicksResponse,
@@ -191,9 +191,9 @@ export async function calculateGamma(
 
 export async function getTokenAddress(
   panopticish: Panoptic,
-  req: GetTokenAddressRequest 
+  req: GetTokenAddressRequest
 ): Promise<GetTokenAddressResponse | Error> {
-  const result = await panopticish.getTokenAddress(req.tokenSymbol); 
+  const result = await panopticish.getTokenAddress(req.tokenSymbol);
 
   if (result instanceof Error) {
     logger.error(`Error executing getTokenAddress: ${result.message}`);
@@ -216,10 +216,10 @@ export async function queryGreeks(
 ): Promise<GreekQueryResponse | Error> {
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.queryGreeks(
-    wallet, 
-    req.panopticPool, 
-    req.tick, 
-    req.positionIdList, 
+    wallet,
+    req.panopticPool,
+    req.tick,
+    req.positionIdList,
     req.greek
   );
 
@@ -240,7 +240,7 @@ export async function queryPositions(
   req: QueryPositionsRequest
 ): Promise<QueryPositionsResponse | Error> {
   const { wallet } = await txWriteData(ethereumish, req.address);
-  const result = await panopticish.queryPositions(wallet);
+  const result = await panopticish.queryPositions(wallet, req.panopticPool);
 
   if (result instanceof Error) {
     logger.error(`Error executing queryPositions: ${result.message}`);
@@ -258,7 +258,7 @@ export async function queryPositions(
   const openPositions = positions.filter((id: string) => !closedPositions.includes(id));
 
   return {
-    queryResponse: JSON.stringify(result.data), 
+    queryResponse: JSON.stringify(result.data),
     positions: positions,
     closedPositionIdList: closedPositions,
     openPositionIdList: openPositions
@@ -286,7 +286,7 @@ export async function queryPrice(
   const liquidity = result.data['data']['pool']['liquidity'];
 
   return {
-    queryResponse: JSON.stringify(result.data), 
+    queryResponse: JSON.stringify(result.data),
     feeTier: feeTier,
     sqrtPrice: sqrtPrice,
     liquidity: liquidity
@@ -310,7 +310,7 @@ export async function querySubgraph(
 }
 
 // PanopticHelper interactions
-export async function checkCollateral(  
+export async function checkCollateral(
   ethereumish: Ethereumish,
   panopticish: Panoptic,
   req: CheckCollateralRequest
@@ -368,7 +368,7 @@ export async function createCallCalendarSpread(
     req.widthShort,
     req.strike,
     req.asset,
-    req.optionRatio, 
+    req.optionRatio,
     req.start
   );
 
@@ -394,7 +394,7 @@ export async function createCallDiagonalSpread(
     req.strikeLong,
     req.strikeShort,
     req.asset,
-    req.optionRatio, 
+    req.optionRatio,
     req.start
   );
 
@@ -419,7 +419,7 @@ export async function createCallRatioSpread(
     req.longStrike,
     req.shortStrike,
     req.asset,
-    req.ratio, 
+    req.ratio,
     req.start
   );
 
@@ -442,7 +442,7 @@ export async function createCallSpread(
     req.univ3pool,
     req.width,
     req.strikeLong,
-    req.strikeShort, 
+    req.strikeShort,
     req.asset,
     req.optionRatio,
     req.start
@@ -464,12 +464,12 @@ export async function createCallZEBRASpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createCallZEBRASpread(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longStrike, 
-    req.shortStrike, 
+    req.univ3pool,
+    req.width,
+    req.longStrike,
+    req.shortStrike,
     req.asset,
-    req.ratio, 
+    req.ratio,
     req.start
   );
 
@@ -489,10 +489,10 @@ export async function createIronButterfly(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createIronButterfly(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.strike, 
-    req.wingWidth, 
+    req.univ3pool,
+    req.width,
+    req.strike,
+    req.wingWidth,
     req.asset
   );
 
@@ -512,10 +512,10 @@ export async function createIronCondor(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createIronCondor(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.callStrike, 
-    req.putStrike, 
+    req.univ3pool,
+    req.width,
+    req.callStrike,
+    req.putStrike,
     req.wingWidth,
     req.asset
   );
@@ -536,10 +536,10 @@ export async function createJadeLizard(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createJadeLizard(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longCallStrike, 
-    req.shortCallStrike, 
+    req.univ3pool,
+    req.width,
+    req.longCallStrike,
+    req.shortCallStrike,
     req.shortPutStrike,
     req.asset
   );
@@ -560,10 +560,10 @@ export async function createPutCalendarSpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createPutCalendarSpread(
     wallet,
-    req.univ3pool, 
-    req.widthLong, 
-    req.widthShort, 
-    req.strike, 
+    req.univ3pool,
+    req.widthLong,
+    req.widthShort,
+    req.strike,
     req.asset,
     req.optionRatio,
     req.start
@@ -585,11 +585,11 @@ export async function createPutDiagonalSpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createPutDiagonalSpread(
     wallet,
-    req.univ3pool, 
-    req.widthLong, 
-    req.widthShort, 
-    req.strikeLong, 
-    req.strikeShort, 
+    req.univ3pool,
+    req.widthLong,
+    req.widthShort,
+    req.strikeLong,
+    req.strikeShort,
     req.asset,
     req.optionRatio,
     req.start
@@ -611,10 +611,10 @@ export async function createPutRatioSpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createPutRatioSpread(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longStrike, 
-    req.shortStrike, 
+    req.univ3pool,
+    req.width,
+    req.longStrike,
+    req.shortStrike,
     req.asset,
     req.ratio,
     req.start
@@ -636,10 +636,10 @@ export async function createPutSpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createPutSpread(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.strikeLong, 
-    req.strikeShort, 
+    req.univ3pool,
+    req.width,
+    req.strikeLong,
+    req.strikeShort,
     req.asset,
     req.optionRatio,
     req.start
@@ -661,10 +661,10 @@ export async function createPutZEBRASpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createPutZEBRASpread(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longStrike, 
-    req.shortStrike, 
+    req.univ3pool,
+    req.width,
+    req.longStrike,
+    req.shortStrike,
     req.asset,
     req.ratio,
     req.start
@@ -686,10 +686,10 @@ export async function createStraddle(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createStraddle(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.strike, 
-    req.asset, 
+    req.univ3pool,
+    req.width,
+    req.strike,
+    req.asset,
     req.isLong,
     req.optionRatio,
     req.start
@@ -711,10 +711,10 @@ export async function createStrangle(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createStrangle(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.callStrike, 
-    req.putStrike, 
+    req.univ3pool,
+    req.width,
+    req.callStrike,
+    req.putStrike,
     req.asset,
     req.isLong,
     req.optionRatio,
@@ -737,10 +737,10 @@ export async function createSuperBear(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createSuperBear(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longPutStrike, 
-    req.shortPutStrike, 
+    req.univ3pool,
+    req.width,
+    req.longPutStrike,
+    req.shortPutStrike,
     req.shortCallStrike,
     req.asset
   );
@@ -761,10 +761,10 @@ export async function createSuperBull(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createSuperBull(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longCallStrike, 
-    req.shortCallStrike, 
+    req.univ3pool,
+    req.width,
+    req.longCallStrike,
+    req.shortCallStrike,
     req.shortPutStrike,
     req.asset
   );
@@ -785,10 +785,10 @@ export async function createZEEHBS(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createZEEHBS(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longStrike, 
-    req.shortStrike, 
+    req.univ3pool,
+    req.width,
+    req.longStrike,
+    req.shortStrike,
     req.asset,
     req.ratio
   );
@@ -866,7 +866,7 @@ export async function getCollateralToken0(
   }
 
   return {
-    collateralToken: result.collateralToken 
+    collateralToken: result.collateralToken
   };
 }
 
@@ -887,7 +887,7 @@ export async function getCollateralToken1(
   }
 
   return {
-    collateralToken: result.collateralToken 
+    collateralToken: result.collateralToken
   };
 }
 
@@ -1125,7 +1125,7 @@ export async function optionPositionBalance(
 
   return {
     balance: result.balance,
-    poolUtilization0: result.poolUtilization0, 
+    poolUtilization0: result.poolUtilization0,
     poolUtilization1: result.poolUtilization1
   };
 }
@@ -1334,7 +1334,7 @@ export async function getPoolData(
 
   return {
     poolAssets: result.poolAssets,
-    insideAMM: result.insideAMM, 
+    insideAMM: result.insideAMM,
     currentPoolUtilization: result.currentPoolUtilization
   };
 }
@@ -1455,7 +1455,7 @@ export async function getAccountPremium(
   }
 
   return {
-    premiumForToken0: result[0], 
+    premiumForToken0: result[0],
     premiumForToken1: result[1]
   };
 }
@@ -1481,7 +1481,7 @@ export async function getAccountFeesBase(
   }
 
   return {
-    feesBase0: result.feesBase0, 
+    feesBase0: result.feesBase0,
     feesBase1: result.feesBase1
   };
 }
@@ -1497,7 +1497,7 @@ export async function addLeg(
     wallet,
     req.self,
     req.legIndex,
-    req.optionRatio, 
+    req.optionRatio,
     req.asset,
     req.isLong,
     req.tokenType,

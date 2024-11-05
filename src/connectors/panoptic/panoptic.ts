@@ -18,9 +18,9 @@ import panopticHelperAbi from './PanopticHelper.ABI.json';
 import collateralTrackerAbi from './CollateralTracker.ABI.json';
 import semiFungiblePositionManagerAbi from './SFPM.ABI.json';
 import axios, { AxiosResponse } from 'axios';
-import { 
-  PositionLegInformation, 
-  CreatePositionResponse, 
+import {
+  PositionLegInformation,
+  CreatePositionResponse,
   CheckCollateralResponse
 } from '../../options/options.requests';
 export class Panoptic {
@@ -292,15 +292,17 @@ export class Panoptic {
 
   // Subgraph interactions
   async queryPositions(
-    wallet: Wallet
+    wallet: Wallet,
+    poolAddress: string
   ): Promise<AxiosResponse | Error> {
     try {
       const query = `
       query GetAccountsPositions(
-        $account: String!
+        $account: String!,
+        $panopticPool: String!
       ) {
        panopticPoolAccounts(
-          where: { account: $account }
+          where: { account: $account, panopticPool: $panopticPool }
         ) {
           accountBalances(
             first: 32
@@ -326,6 +328,7 @@ export class Panoptic {
     `;
       const variables = {
         account: wallet.address.toLowerCase(),
+        panopticPool: poolAddress.toLowerCase()
       };
       return await this.querySubgraph(query, variables);
     } catch (error) {
@@ -379,7 +382,9 @@ export class Panoptic {
     variables: Record<string, string | string[] | number | number[] | BigNumber | BigNumber[]>
   ): Promise<AxiosResponse | Error> {
     try {
-      return await axios.post(this.subgraphUrl, { query, variables });
+      let result = await axios.post(this.subgraphUrl, { query, variables });
+      console.dir(result, { depth: null });
+      return result
     } catch (error) {
       if (error instanceof Error) {
         return new Error("Error querying Panoptic Subgraph:" + error.message);
@@ -406,17 +411,17 @@ export class Panoptic {
 
   // PanopticHelper interactions
   async checkCollateral(
-    wallet: Wallet, 
-    panopticPool: string, 
-    atTick: number, 
+    wallet: Wallet,
+    panopticPool: string,
+    atTick: number,
     positionIdList: string[]
-  ): Promise<CheckCollateralResponse | Error> { 
+  ): Promise<CheckCollateralResponse | Error> {
     try {
       const panopticHelperAddress = this.PanopticHelper;
       const panopticHelperContract = new Contract(panopticHelperAddress, panopticHelperAbi.abi, wallet);
       const response = await panopticHelperContract['checkCollateral(address,address,int24,uint256[])'](
-        panopticPool, 
-        wallet.address, 
+        panopticPool,
+        wallet.address,
         atTick,
         positionIdList
       );
@@ -426,7 +431,7 @@ export class Panoptic {
         collateralBalance1: response.collateralBalance1,
         requiredCollateral1: response.requiredCollateral1,
       }
-    } catch (error) { 
+    } catch (error) {
       return new Error("Error on checkCollateral: " + (error as Error).message)
     }
   }
@@ -1075,7 +1080,7 @@ export class Panoptic {
   ): Promise<ContractReceipt | Error> {
     try {
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
-      let gasEstimate: number; 
+      let gasEstimate: number;
       try{
         gasEstimate = (await panopticPoolContract.estimateGas.forceExercise(
           wallet.address,
@@ -1115,7 +1120,7 @@ export class Panoptic {
   ): Promise<ContractReceipt | Error> {
     try {
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
-      let gasEstimate: number; 
+      let gasEstimate: number;
       try{
         gasEstimate = (await panopticPoolContract.estimateGas.liquidate(
           positionIdListLiquidator,
@@ -1157,7 +1162,7 @@ export class Panoptic {
     try {
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
 
-      let gasEstimate: number; 
+      let gasEstimate: number;
       try {
         gasEstimate = (await panopticPoolContract.estimateGas.mintOptions(
           positionIdList,
@@ -1224,7 +1229,7 @@ export class Panoptic {
   ): Promise<ContractReceipt | Error> {
     try {
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
-      let gasEstimate: number; 
+      let gasEstimate: number;
       try{
         gasEstimate = (await panopticPoolContract.estimateGas.pokeMedian()).toNumber();
       } catch (error) {
@@ -1254,7 +1259,7 @@ export class Panoptic {
   ): Promise<ContractReceipt | Error> {
     try {
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
-      let gasEstimate: number; 
+      let gasEstimate: number;
       try{
         gasEstimate = (await panopticPoolContract.estimateGas.settleLongPremium(
           positionIdList,
@@ -1290,7 +1295,7 @@ export class Panoptic {
   ): Promise<ContractReceipt | Error> {
     try {
       const tokenContract = new Contract(collateralTrackerContract.toString(), collateralTrackerAbi.abi, wallet);
-      let gasEstimate: number; 
+      let gasEstimate: number;
       try{
         gasEstimate = (await tokenContract.estimateGas.deposit(
           assets,
@@ -1360,7 +1365,7 @@ export class Panoptic {
   ): Promise<ContractReceipt | Error> {
     try {
       const tokenContract = new Contract(collateralTrackerContract.toString(), collateralTrackerAbi.abi, wallet);
-      let gasEstimate: number; 
+      let gasEstimate: number;
       try{
         gasEstimate = (await tokenContract.estimateGas.withdraw(
           assets,
