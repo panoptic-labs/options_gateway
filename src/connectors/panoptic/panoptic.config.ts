@@ -8,6 +8,7 @@ export namespace PanopticConfig {
     gasLimitCushionFactor: number; 
     ttl: number;
     subgraphUrl: string;
+    uniswapV3SubgraphUrl: string; 
     lowestTick: number;
     highestTick: number;
     multiCallAddress: (chain: string, network: string) => string;
@@ -29,6 +30,7 @@ export namespace PanopticConfig {
     absoluteGasLimit: ConfigManagerV2.getInstance().get(`panoptic.absoluteGasLimit`),
     ttl: ConfigManagerV2.getInstance().get('panoptic.ttl'),
     subgraphUrl: ConfigManagerV2.getInstance().get('panoptic.subgraph.endpoint'),
+    uniswapV3SubgraphUrl: ConfigManagerV2.getInstance().get('panoptic.subgraph.uniswapV3'),
     lowestTick: ConfigManagerV2.getInstance().get('panoptic.lowestTick'),
     highestTick: ConfigManagerV2.getInstance().get('panoptic.highestTick'),
     multiCallAddress: (chain: string, network: string) =>

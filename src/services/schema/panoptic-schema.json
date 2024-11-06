@@ -25,6 +25,9 @@
       "properties": {
         "endpoint": {
           "type": "string"
+        },
+        "uniswapV3": {
+          "type": "string"
         }
       },
       "additionalProperties": false

@@ -6,6 +6,7 @@ import {
   addLeg,
   mint,
   burn,
+  burnAndMint,
   liquidate,
   getCollateralToken0,
   getCollateralToken1,
@@ -16,6 +17,7 @@ import {
   maxWithdraw,
   numberOfPositions,
   querySubgraph,
+  checkCollateral,
   createBigLizard,
   createCallCalendarSpread,
   createCallDiagonalSpread,
@@ -35,7 +37,9 @@ import {
   createSuperBear,
   createSuperBull,
   createZEEHBS,
+  unwrapTokenId,
   queryPositions,
+  queryPrice,
   queryGreeks,
   calculateAccumulatedFeesBatch,
   optionPositionBalance,
@@ -47,20 +51,31 @@ import {
   getAccountFeesBase,
   calculateDelta,
   calculateGamma,
+  getTokenAddress,
+  getPanopticPool,
+  checkUniswapPool,
+  getSpotPrice,
+  getTickSpacingAndInitializedTicks
 } from './options.controllers';
 import {
   ExecuteMintRequest,
   MintResponse,
   ExecuteBurnRequest,
   BurnResponse,
+  ExecuteBurnAndMintRequest,
+  BurnAndMintResponse,
   CalculateDeltaRequest,
   CalculateDeltaResponse,
   CalculateGammaRequest,
   CalculateGammaResponse,
+  GetTokenAddressRequest,
+  GetTokenAddressResponse,
   GreekQueryRequest,
   GreekQueryResponse,
   QueryPositionsRequest,
   QueryPositionsResponse,
+  QueryPriceRequest,
+  QueryPriceResponse,
   QuerySubgraphRequest,
   QuerySubgraphResponse,
   CreatePositionResponse,
@@ -90,6 +105,8 @@ import {
   GetPoolDataResponse,
   MaxWithdrawResponse,
   NumberOfPositionsResponse,
+  CheckCollateralRequest,
+  CheckCollateralResponse,
   CreateBigLizardRequest,
   CreateCallCalendarSpreadRequest,
   CreateCallDiagonalSpreadRequest,
@@ -109,13 +126,23 @@ import {
   CreateSuperBearRequest,
   CreateSuperBullRequest,
   CreateZEEHBSRequest,
+  UnwrapTokenIdRequest,
   CalculateAccumulatedFeesBatchResponse,
   OptionsPositionBalanceResponse,
   PokeMedianResponse,
   SettleLongPremiumResponse,
   GetAccountLiquidityResponse,
   GetAccountPremiumResponse,
-  GetAccountFeesBaseResponse
+  GetAccountFeesBaseResponse,
+  GetPanopticPoolRequest,
+  GetPanopticPoolResponse,
+  CheckUniswapV3PoolRequest,
+  CheckUniswapV3PoolResponse,
+  GetSpotPriceRequest,
+  GetSpotPriceResponse,
+  UnwrapTokenIdResponse,
+  GetTickSpacingAndInitializedTicksRequest,
+  GetTickSpacingAndInitializedTicksResponse
 } from './options.requests';
 
 export namespace OptionsRoutes {
@@ -146,6 +173,18 @@ export namespace OptionsRoutes {
   );
 
   router.post(
+    '/getTokenAddress',
+    asyncHandler(
+      async (
+        req: Request<{}, {}, GetTokenAddressRequest>,
+        res: Response<GetTokenAddressResponse | Error, {}>
+      ) => {
+        res.status(200).json(await getTokenAddress(req.body));
+      }
+    )
+  );
+
+  router.post(
     '/queryGreeks',
     asyncHandler(
       async (
@@ -170,6 +209,18 @@ export namespace OptionsRoutes {
   );
 
   router.post(
+    '/queryPrice',
+    asyncHandler(
+      async (
+        req: Request<{}, {}, QueryPriceRequest>,
+        res: Response<QueryPriceResponse | Error, {}>
+      ) => {
+        res.status(200).json(await queryPrice(req.body));
+      }
+    )
+  );
+
+  router.post(
     '/querySubgraph',
     asyncHandler(
       async (
@@ -177,6 +228,18 @@ export namespace OptionsRoutes {
         res: Response<QuerySubgraphResponse | Error, {}>
       ) => {
         res.status(200).json(await querySubgraph(req.body));
+      }
+    )
+  );
+
+  router.post(
+    '/checkCollateral',
+    asyncHandler(
+      async (
+        req: Request<{}, {}, CheckCollateralRequest>,
+        res: Response<CheckCollateralResponse | Error, {}>
+      ) => {
+        res.status(200).json(await checkCollateral(req.body));
       }
     )
   );
@@ -410,6 +473,18 @@ export namespace OptionsRoutes {
   );
 
   router.post(
+    '/unwrapTokenId',
+    asyncHandler(
+      async (
+        req: Request<{}, {}, UnwrapTokenIdRequest>,
+        res: Response<UnwrapTokenIdResponse | Error, {}>
+      ) => {
+        res.status(200).json(await unwrapTokenId(req.body));
+      }
+    )
+  );
+
+  router.post(
     '/calculateAccumulatedFeesBatch',
     asyncHandler(
       async (
@@ -455,6 +530,20 @@ export namespace OptionsRoutes {
         // TODO: We need to iterate on this; they normally work but we changed up the request format.
         // validateBurnRequest(req.body);
         res.status(200).json(await burn(req.body));
+      }
+    )
+  );
+
+  router.post(
+    '/burnAndMint',
+    asyncHandler(
+      async (
+        req: Request<{}, {}, ExecuteBurnAndMintRequest>,
+        res: Response<BurnAndMintResponse | Error, {}>
+      ) => {
+        // TODO: Write validator for burnAndMint
+        // validateBurnAndMintRequest(req.body);
+        res.status(200).json(await burnAndMint(req.body));
       }
     )
   );
@@ -649,6 +738,54 @@ export namespace OptionsRoutes {
         res: Response<CreatePositionResponse | Error, {}>
       ) => {
         res.status(200).json(await addLeg(req.body));
+      }
+    )
+  )
+
+  router.post(
+    '/getPanopticPool',
+    asyncHandler(
+      async (
+        req: Request<{}, {}, GetPanopticPoolRequest>,
+        res: Response<GetPanopticPoolResponse | Error, {}>
+      ) => {
+        res.status(200).json(await getPanopticPool(req.body));
+      }
+    )
+  )
+
+  router.post(
+    '/checkUniswapPool',
+    asyncHandler(
+      async (
+        req: Request<{}, {}, CheckUniswapV3PoolRequest>,
+        res: Response<CheckUniswapV3PoolResponse | Error, {}>
+      ) => {
+        res.status(200).json(await checkUniswapPool(req.body));
+      }
+    )
+  )
+
+  router.post(
+    '/getSpotPrice',
+    asyncHandler(
+      async (
+        req: Request<{}, {}, GetSpotPriceRequest>,
+        res: Response<GetSpotPriceResponse | Error, {}>
+      ) => {
+        res.status(200).json(await getSpotPrice(req.body));
+      }
+    )
+  )
+
+  router.post(
+    '/getTickSpacingAndInitializedTicks',
+    asyncHandler(
+      async (
+        req: Request<{}, {}, GetTickSpacingAndInitializedTicksRequest>,
+        res: Response<GetTickSpacingAndInitializedTicksResponse | Error, {}>
+      ) => {
+        res.status(200).json(await getTickSpacingAndInitializedTicks(req.body));
       }
     )
   )

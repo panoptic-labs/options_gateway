@@ -51,6 +51,15 @@ export interface CalculateGammaResponse {
   gamma: number;
 }
 
+export interface GetTokenAddressRequest extends PanopticRequest {
+  tokenSymbol: string;
+}
+
+export interface GetTokenAddressResponse {
+  tokenAddress: string;
+  tokenDecimals: number;
+}
+
 export interface GreekQueryRequest extends PanopticRequest {
   address: string;
   panopticPool?: string,
@@ -74,7 +83,7 @@ export interface GreekQueryResponse {
   positionIdList?: BigNumber[];
 }
 
-export interface QueryPositionsRequest extends PanopticRequest {
+export interface QueryPositionsRequest extends PanopticPoolRequest {
   wallet: Wallet;
   address: string;
 }
@@ -83,6 +92,17 @@ export interface QueryPositionsResponse extends QuerySubgraphResponse {
   positions?: BigNumber[];
   closedPositionIdList?: BigNumber[];
   openPositionIdList?: BigNumber[];
+}
+
+export interface QueryPriceRequest extends PanopticRequest {
+  wallet: Wallet;
+  address: string;
+  uniV3Pool: string;
+}
+export interface QueryPriceResponse extends QuerySubgraphResponse {
+  feeTier?: BigNumber[];
+  sqrtPrice?: BigNumber[];
+  liquidity?: BigNumber[];
 }
 
 export interface QuerySubgraphRequest extends PanopticRequest {
@@ -96,8 +116,22 @@ export interface QuerySubgraphResponse {
 
 export interface CreatePositionRequest extends PanopticRequest{
   wallet: Wallet;
-  univ3pool: BigNumber;
+  univ3pool: string;
   address: string;
+}
+
+export interface CheckCollateralRequest extends PanopticRequest{
+  panopticPool: string;
+  address: string;
+  atTick: number;
+  positionIdList: string[];
+}
+
+export interface CheckCollateralResponse{
+  collateralBalance0: number;
+  requiredCollateral0: number;
+  collateralBalance1: number;
+  requiredCollateral1: number;
 }
 
 export interface CreateBigLizardRequest extends CreatePositionRequest {
@@ -224,10 +258,10 @@ export interface CreatePutZEBRASpreadRequest extends CreatePositionRequest {
 export interface CreateStraddleRequest extends CreatePositionRequest {
   width: number;
   strike: number;
-  asset: BigNumber;
-  isLong: BigNumber;
-  optionRatio: BigNumber;
-  start: BigNumber;
+  asset: number;
+  isLong: number;
+  optionRatio: number;
+  start: number;
 }
 
 export interface CreateStrangleRequest extends CreatePositionRequest {
@@ -263,6 +297,27 @@ export interface CreateZEEHBSRequest extends CreatePositionRequest {
   ratio: BigNumber;
 }
 
+export interface PositionLegInformation{
+  poolId: string,
+  UniswapV3Pool: string,
+  asset: string,
+  optionRatio: string,
+  tokenType: string,
+  isLong: string,
+  riskPartner: string,
+  strike: number,
+  width: number
+}
+export interface UnwrapTokenIdRequest extends PanopticRequest {
+  address: string;
+  tokenId: string;
+}
+
+export interface UnwrapTokenIdResponse {
+  numberOfLegs: number;
+  legInfo: PositionLegInformation[];
+}
+
 export interface CreateAddLegsRequest extends CreatePositionRequest {
   self: BigNumber;
   legIndex: BigNumber;
@@ -276,7 +331,7 @@ export interface CreateAddLegsRequest extends CreatePositionRequest {
 }
 
 export interface CreatePositionResponse {
-  tokenId: BigNumber;
+  tokenId: string;
 }
 
 export interface CalculateAccumulatedFeesBatchRequest extends PanopticPoolRequest {
@@ -300,6 +355,21 @@ export interface ExecuteBurnRequest extends PanopticPoolRequest {
   newPositionIdList: BigNumber[];
   tickLimitLow: number;
   tickLimitHigh: number;
+}
+
+export interface ExecuteBurnAndMintRequest extends PanopticPoolRequest {
+  address: string;
+  chain: string;
+  network: string;
+  burnTokenId: BigNumber;
+  postburnPositionIdList: BigNumber[];
+  mintTokenId: BigNumber;
+  positionSize: BigNumber;
+  effectiveLiquidityLimit: BigNumber;
+  burnTickLimitLow: number;
+  burnTickLimitHigh: number;
+  mintTickLimitLow: number;
+  mintTickLimitHigh: number;
 }
 
 export interface CollateralTokenRequest extends PanopticPoolRequest {
@@ -333,7 +403,7 @@ export interface LiquidateRequest extends PanopticPoolRequest {
 }
 
 export interface LiquidateResponse extends BroadcastedTxResponse{
-  tx: ContractReceipt; 
+  tx: ContractReceipt;
 }
 
 export interface ExecuteMintRequest extends NetworkSelectionRequest {
@@ -370,7 +440,7 @@ export interface PokeMedianRequest extends PanopticPoolRequest {
 }
 
 export interface PokeMedianResponse extends BroadcastedTxResponse{
-  tx: ContractReceipt; 
+  tx: ContractReceipt;
 }
 
 export interface SettleLongPremiumRequest extends PanopticPoolRequest {
@@ -382,7 +452,7 @@ export interface SettleLongPremiumRequest extends PanopticPoolRequest {
 }
 
 export interface SettleLongPremiumResponse extends BroadcastedTxResponse{
-  tx: ContractReceipt; 
+  tx: ContractReceipt;
 }
 
 export interface DepositRequest extends PanopticRequest {
@@ -403,7 +473,7 @@ export interface GetAssetRequest extends PanopticRequest {
 }
 
 export interface GetAssetResponse extends BroadcastedTxResponse{
-  assetTokenAddress?: string; 
+  assetTokenAddress?: string;
 }
 
 export interface GetPoolDataRequest extends PanopticRequest {
@@ -415,7 +485,7 @@ export interface GetPoolDataRequest extends PanopticRequest {
 export interface GetPoolDataResponse {
   poolAssets: BigNumber;
   insideAMM: BigNumber;
-  currentPoolUtilization: BigNumber; 
+  currentPoolUtilization: BigNumber;
 }
 
 export interface MaxWithdrawRequest extends PanopticRequest {
@@ -466,8 +536,8 @@ export interface GetAccountPremiumRequest extends PanopticRequest {
 }
 
 export interface GetAccountPremiumResponse {
-  premiumForToken0: BigNumber; 
-  premiumForToken1: BigNumber; 
+  premiumForToken0: BigNumber;
+  premiumForToken1: BigNumber;
 }
 
 export interface GetAccountFeesBaseRequest extends PanopticRequest {
@@ -480,9 +550,9 @@ export interface GetAccountFeesBaseRequest extends PanopticRequest {
   address: string;
 }
 
-export interface GetAccountFeesBaseResponse { 
-  feesBase0: BigNumber; 
-  feesBase1: BigNumber; 
+export interface GetAccountFeesBaseResponse {
+  feesBase0: BigNumber;
+  feesBase1: BigNumber;
 }
 
 export interface BurnResponse {
@@ -528,7 +598,49 @@ export interface MintResponse extends BroadcastedTxResponse{
   gasLimit?: number;
   gasWanted?: string; //
   gasCost?: string; // : gasUsed
-  other?: any 
+  other?: any
 }
 
+export interface BurnAndMintResponse extends BurnResponse {}
 
+export interface GetPanopticPoolRequest extends PanopticRequest{
+  address: string;
+  uniswapV3PoolAddress: string;
+}
+
+export interface GetPanopticPoolResponse{
+  panopticPoolAddress: string;
+}
+
+export interface CheckUniswapV3PoolRequest extends PanopticRequest{
+  address: string;
+  t0_address: string;
+  t1_address: string;
+  fee: 500 | 3000 | 10000; // 500 for 0.05%, 3000 for 0.3%, 10000 for 1%
+}
+
+export interface CheckUniswapV3PoolResponse{
+  uniswapV3PoolAddress: string;
+}
+
+export interface GetSpotPriceRequest extends PanopticRequest{
+  address: string;
+  uniswapV3PoolAddress: string;
+  token0Decimals: number;
+  token1Decimals: number;
+}
+
+export interface GetSpotPriceResponse{
+  spotPrice: number
+}
+
+export interface GetTickSpacingAndInitializedTicksRequest extends PanopticRequest{
+  address: string;
+  uniswapV3PoolAddress: string;
+}
+
+export interface GetTickSpacingAndInitializedTicksResponse{
+  tickSpacing: number;
+  ticks: number[];
+  // initializedTicks: number[];
+}

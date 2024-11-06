@@ -12,17 +12,24 @@ import {
 import { logger } from '../../services/logger';
 import {
   ExecuteBurnRequest,
+  ExecuteBurnAndMintRequest,
   BurnResponse,
   CalculateDeltaRequest,
   CalculateDeltaResponse,
   CalculateGammaRequest,
   CalculateGammaResponse,
+  GetTokenAddressRequest,
+  GetTokenAddressResponse,
   GreekQueryRequest,
   GreekQueryResponse,
   QueryPositionsRequest,
   QueryPositionsResponse,
+  QueryPriceRequest,
+  QueryPriceResponse,
   QuerySubgraphRequest,
   QuerySubgraphResponse,
+  CheckCollateralRequest,
+  CheckCollateralResponse,
   CreateBigLizardRequest,
   CreateCallCalendarSpreadRequest,
   CreateCallDiagonalSpreadRequest,
@@ -33,7 +40,7 @@ import {
   CreateIronCondorRequest,
   CreateJadeLizardRequest,
   CreatePutCalendarSpreadRequest,
-  CreatePutDiagonalSpreadRequest, 
+  CreatePutDiagonalSpreadRequest,
   CreatePutRatioSpreadRequest,
   CreatePutSpreadRequest,
   CreatePutZEBRASpreadRequest,
@@ -42,6 +49,8 @@ import {
   CreateSuperBearRequest,
   CreateSuperBullRequest,
   CreateZEEHBSRequest,
+  UnwrapTokenIdRequest,
+  UnwrapTokenIdResponse,
   CreateAddLegsRequest,
   CreatePositionResponse,
   CalculateAccumulatedFeesBatchRequest,
@@ -78,7 +87,15 @@ import {
   WithdrawResponse,
   GetAccountLiquidityResponse,
   GetAccountPremiumResponse,
-  GetAccountFeesBaseResponse
+  GetAccountFeesBaseResponse,
+  GetPanopticPoolRequest,
+  GetPanopticPoolResponse,
+  CheckUniswapV3PoolRequest,
+  CheckUniswapV3PoolResponse,
+  GetSpotPriceRequest,
+  GetSpotPriceResponse,
+  GetTickSpacingAndInitializedTicksRequest,
+  GetTickSpacingAndInitializedTicksResponse,
 } from '../../options/options.requests';
 import { Panoptic } from '../panoptic/panoptic';
 import { gasCostInEthString } from '../../services/base';
@@ -173,6 +190,23 @@ export async function calculateGamma(
   };
 }
 
+export async function getTokenAddress(
+  panopticish: Panoptic,
+  req: GetTokenAddressRequest
+): Promise<GetTokenAddressResponse | Error> {
+  const result = await panopticish.getTokenAddress(req.tokenSymbol);
+
+  if (result instanceof Error) {
+    logger.error(`Error executing getTokenAddress: ${result.message}`);
+    return result;
+  }
+
+  return {
+    tokenAddress: result["tokenAddress"],
+    tokenDecimals: result["tokenDecimals"]
+  };
+}
+
 // TODO: Eventually, we'll allow users to make 1 gateway call to get all 5 greeks, rather than
 //       calling calculateDelta, then calculateGamma, etc...
 //       NOT YET FUNCTIONAL
@@ -183,10 +217,10 @@ export async function queryGreeks(
 ): Promise<GreekQueryResponse | Error> {
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.queryGreeks(
-    wallet, 
-    req.panopticPool, 
-    req.tick, 
-    req.positionIdList, 
+    wallet,
+    req.panopticPool,
+    req.tick,
+    req.positionIdList,
     req.greek
   );
 
@@ -207,7 +241,7 @@ export async function queryPositions(
   req: QueryPositionsRequest
 ): Promise<QueryPositionsResponse | Error> {
   const { wallet } = await txWriteData(ethereumish, req.address);
-  const result = await panopticish.queryPositions(wallet);
+  const result = await panopticish.queryPositions(wallet, req.panopticPool);
 
   if (result instanceof Error) {
     logger.error(`Error executing queryPositions: ${result.message}`);
@@ -225,10 +259,38 @@ export async function queryPositions(
   const openPositions = positions.filter((id: string) => !closedPositions.includes(id));
 
   return {
-    queryResponse: JSON.stringify(result.data), 
+    queryResponse: JSON.stringify(result.data),
     positions: positions,
     closedPositionIdList: closedPositions,
     openPositionIdList: openPositions
+  };
+}
+
+export async function queryPrice(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: QueryPriceRequest
+): Promise<QueryPriceResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.queryPrice(
+    wallet,
+    req.uniV3Pool
+  );
+
+  if (result instanceof Error) {
+    logger.error(`Error executing queryPrice: ${result.message}`);
+    return result;
+  }
+
+  const feeTier = result.data['data']['pool']['feeTier'];
+  const sqrtPrice = result.data['data']['pool']['sqrtPrice'];
+  const liquidity = result.data['data']['pool']['liquidity'];
+
+  return {
+    queryResponse: JSON.stringify(result.data),
+    feeTier: feeTier,
+    sqrtPrice: sqrtPrice,
+    liquidity: liquidity
   };
 }
 
@@ -249,6 +311,28 @@ export async function querySubgraph(
 }
 
 // PanopticHelper interactions
+export async function checkCollateral(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: CheckCollateralRequest
+): Promise<CheckCollateralResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.checkCollateral(
+    wallet,
+    req.panopticPool,
+    req.atTick,
+    req.positionIdList
+  );
+
+  if (result instanceof Error) {
+    logger.error(`Error executing checkCollateral: ${result.message}`);
+    return result;
+  }
+
+  return result
+}
+
+
 export async function createBigLizard(
   ethereumish: Ethereumish,
   panopticish: Panoptic,
@@ -269,9 +353,7 @@ export async function createBigLizard(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createCallCalendarSpread(
@@ -287,7 +369,7 @@ export async function createCallCalendarSpread(
     req.widthShort,
     req.strike,
     req.asset,
-    req.optionRatio, 
+    req.optionRatio,
     req.start
   );
 
@@ -296,9 +378,7 @@ export async function createCallCalendarSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createCallDiagonalSpread(
@@ -315,7 +395,7 @@ export async function createCallDiagonalSpread(
     req.strikeLong,
     req.strikeShort,
     req.asset,
-    req.optionRatio, 
+    req.optionRatio,
     req.start
   );
 
@@ -324,9 +404,7 @@ export async function createCallDiagonalSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createCallRatioSpread(
@@ -342,7 +420,7 @@ export async function createCallRatioSpread(
     req.longStrike,
     req.shortStrike,
     req.asset,
-    req.ratio, 
+    req.ratio,
     req.start
   );
 
@@ -351,9 +429,7 @@ export async function createCallRatioSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createCallSpread(
@@ -367,7 +443,7 @@ export async function createCallSpread(
     req.univ3pool,
     req.width,
     req.strikeLong,
-    req.strikeShort, 
+    req.strikeShort,
     req.asset,
     req.optionRatio,
     req.start
@@ -378,9 +454,7 @@ export async function createCallSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createCallZEBRASpread(
@@ -391,12 +465,12 @@ export async function createCallZEBRASpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createCallZEBRASpread(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longStrike, 
-    req.shortStrike, 
+    req.univ3pool,
+    req.width,
+    req.longStrike,
+    req.shortStrike,
     req.asset,
-    req.ratio, 
+    req.ratio,
     req.start
   );
 
@@ -405,9 +479,7 @@ export async function createCallZEBRASpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createIronButterfly(
@@ -418,10 +490,10 @@ export async function createIronButterfly(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createIronButterfly(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.strike, 
-    req.wingWidth, 
+    req.univ3pool,
+    req.width,
+    req.strike,
+    req.wingWidth,
     req.asset
   );
 
@@ -430,9 +502,7 @@ export async function createIronButterfly(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createIronCondor(
@@ -443,10 +513,10 @@ export async function createIronCondor(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createIronCondor(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.callStrike, 
-    req.putStrike, 
+    req.univ3pool,
+    req.width,
+    req.callStrike,
+    req.putStrike,
     req.wingWidth,
     req.asset
   );
@@ -456,9 +526,7 @@ export async function createIronCondor(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createJadeLizard(
@@ -469,10 +537,10 @@ export async function createJadeLizard(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createJadeLizard(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longCallStrike, 
-    req.shortCallStrike, 
+    req.univ3pool,
+    req.width,
+    req.longCallStrike,
+    req.shortCallStrike,
     req.shortPutStrike,
     req.asset
   );
@@ -482,9 +550,7 @@ export async function createJadeLizard(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createPutCalendarSpread(
@@ -495,10 +561,10 @@ export async function createPutCalendarSpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createPutCalendarSpread(
     wallet,
-    req.univ3pool, 
-    req.widthLong, 
-    req.widthShort, 
-    req.strike, 
+    req.univ3pool,
+    req.widthLong,
+    req.widthShort,
+    req.strike,
     req.asset,
     req.optionRatio,
     req.start
@@ -509,9 +575,7 @@ export async function createPutCalendarSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createPutDiagonalSpread(
@@ -522,11 +586,11 @@ export async function createPutDiagonalSpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createPutDiagonalSpread(
     wallet,
-    req.univ3pool, 
-    req.widthLong, 
-    req.widthShort, 
-    req.strikeLong, 
-    req.strikeShort, 
+    req.univ3pool,
+    req.widthLong,
+    req.widthShort,
+    req.strikeLong,
+    req.strikeShort,
     req.asset,
     req.optionRatio,
     req.start
@@ -537,9 +601,7 @@ export async function createPutDiagonalSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createPutRatioSpread(
@@ -550,10 +612,10 @@ export async function createPutRatioSpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createPutRatioSpread(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longStrike, 
-    req.shortStrike, 
+    req.univ3pool,
+    req.width,
+    req.longStrike,
+    req.shortStrike,
     req.asset,
     req.ratio,
     req.start
@@ -564,9 +626,7 @@ export async function createPutRatioSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createPutSpread(
@@ -577,10 +637,10 @@ export async function createPutSpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createPutSpread(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.strikeLong, 
-    req.strikeShort, 
+    req.univ3pool,
+    req.width,
+    req.strikeLong,
+    req.strikeShort,
     req.asset,
     req.optionRatio,
     req.start
@@ -591,9 +651,7 @@ export async function createPutSpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createPutZEBRASpread(
@@ -604,10 +662,10 @@ export async function createPutZEBRASpread(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createPutZEBRASpread(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longStrike, 
-    req.shortStrike, 
+    req.univ3pool,
+    req.width,
+    req.longStrike,
+    req.shortStrike,
     req.asset,
     req.ratio,
     req.start
@@ -618,9 +676,7 @@ export async function createPutZEBRASpread(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createStraddle(
@@ -631,10 +687,10 @@ export async function createStraddle(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createStraddle(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.strike, 
-    req.asset, 
+    req.univ3pool,
+    req.width,
+    req.strike,
+    req.asset,
     req.isLong,
     req.optionRatio,
     req.start
@@ -645,9 +701,7 @@ export async function createStraddle(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createStrangle(
@@ -658,10 +712,10 @@ export async function createStrangle(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createStrangle(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.callStrike, 
-    req.putStrike, 
+    req.univ3pool,
+    req.width,
+    req.callStrike,
+    req.putStrike,
     req.asset,
     req.isLong,
     req.optionRatio,
@@ -673,9 +727,7 @@ export async function createStrangle(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createSuperBear(
@@ -686,10 +738,10 @@ export async function createSuperBear(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createSuperBear(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longPutStrike, 
-    req.shortPutStrike, 
+    req.univ3pool,
+    req.width,
+    req.longPutStrike,
+    req.shortPutStrike,
     req.shortCallStrike,
     req.asset
   );
@@ -699,9 +751,7 @@ export async function createSuperBear(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createSuperBull(
@@ -712,10 +762,10 @@ export async function createSuperBull(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createSuperBull(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longCallStrike, 
-    req.shortCallStrike, 
+    req.univ3pool,
+    req.width,
+    req.longCallStrike,
+    req.shortCallStrike,
     req.shortPutStrike,
     req.asset
   );
@@ -725,9 +775,7 @@ export async function createSuperBull(
     return result;
   }
 
-  return {
-    tokenId: result.tokenId
-  };
+  return result
 }
 
 export async function createZEEHBS(
@@ -738,10 +786,10 @@ export async function createZEEHBS(
   const { wallet } = await txWriteData(ethereumish, req.address);
   const result = await panopticish.createZEEHBS(
     wallet,
-    req.univ3pool, 
-    req.width, 
-    req.longStrike, 
-    req.shortStrike, 
+    req.univ3pool,
+    req.width,
+    req.longStrike,
+    req.shortStrike,
     req.asset,
     req.ratio
   );
@@ -751,8 +799,28 @@ export async function createZEEHBS(
     return result;
   }
 
+  return result
+}
+
+export async function unwrapTokenId(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: UnwrapTokenIdRequest
+): Promise<UnwrapTokenIdResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.unwrapTokenId(
+    wallet,
+    req.tokenId
+  );
+
+  if (result instanceof Error) {
+    logger.error(`Error executing unwrapTokenId: ${result.message}`);
+    return result;
+  }
+
   return {
-    tokenId: result.tokenId
+    numberOfLegs: result.length,
+    legInfo: result
   };
 }
 
@@ -799,7 +867,7 @@ export async function getCollateralToken0(
   }
 
   return {
-    collateralToken: result.collateralToken 
+    collateralToken: result.collateralToken
   };
 }
 
@@ -820,7 +888,7 @@ export async function getCollateralToken1(
   }
 
   return {
-    collateralToken: result.collateralToken 
+    collateralToken: result.collateralToken
   };
 }
 
@@ -872,6 +940,61 @@ export async function burn(
     return new Error(`Unexpected error in burn function: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
+
+export async function burnAndMint(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: ExecuteBurnAndMintRequest
+): Promise<BurnResponse | Error> {
+  const startTimestamp: number = Date.now();
+  try {
+    const { wallet } = await txWriteData(ethereumish, req.address);
+    const gasPrice: number = ethereumish.gasPrice;
+    const tx: ContractReceipt | Error = await panopticish.executeBurnAndMint(
+      wallet,
+      req.panopticPool,
+      req.burnTokenId,
+      req.postburnPositionIdList,
+      req.mintTokenId,
+      req.positionSize,
+      req.effectiveLiquidityLimit,
+      req.burnTickLimitLow,
+      req.burnTickLimitHigh,
+      req.mintTickLimitLow,
+      req.mintTickLimitHigh,
+    );
+
+    if (tx instanceof Error) {
+      logger.error(`Error executing burn-and-mint multicall: ${tx.message}`);
+      return tx;
+    }
+
+    if (tx.transactionHash) {
+      await ethereumish.txStorage.saveTx(
+        ethereumish.chain,
+        ethereumish.chainId,
+        tx.transactionHash,
+        new Date(),
+        ethereumish.gasPrice
+      );
+    }
+
+    logger.info(
+      `Burn-and-mint has been executed, txHash is ${tx.transactionHash}, nonce is ${tx.transactionIndex}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
+    );
+
+    return {
+      tx: tx,
+      network: ethereumish.chain,
+      timestamp: startTimestamp,
+      txHash: tx.transactionHash,
+    };
+  } catch (error) {
+    logger.error(`Unexpected error in burn-and-mint multicall: ${error instanceof Error ? error.message : error}`);
+    return new Error(`Unexpected error in burn-and-mint multicall: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
 
 export async function forceExercise(
   ethereumish: Ethereumish,
@@ -1058,7 +1181,7 @@ export async function optionPositionBalance(
 
   return {
     balance: result.balance,
-    poolUtilization0: result.poolUtilization0, 
+    poolUtilization0: result.poolUtilization0,
     poolUtilization1: result.poolUtilization1
   };
 }
@@ -1267,7 +1390,7 @@ export async function getPoolData(
 
   return {
     poolAssets: result.poolAssets,
-    insideAMM: result.insideAMM, 
+    insideAMM: result.insideAMM,
     currentPoolUtilization: result.currentPoolUtilization
   };
 }
@@ -1388,7 +1511,7 @@ export async function getAccountPremium(
   }
 
   return {
-    premiumForToken0: result[0], 
+    premiumForToken0: result[0],
     premiumForToken1: result[1]
   };
 }
@@ -1414,7 +1537,7 @@ export async function getAccountFeesBase(
   }
 
   return {
-    feesBase0: result.feesBase0, 
+    feesBase0: result.feesBase0,
     feesBase1: result.feesBase1
   };
 }
@@ -1430,7 +1553,7 @@ export async function addLeg(
     wallet,
     req.self,
     req.legIndex,
-    req.optionRatio, 
+    req.optionRatio,
     req.asset,
     req.isLong,
     req.tokenType,
@@ -1444,7 +1567,91 @@ export async function addLeg(
     return result;
   }
 
+  return result
+}
+
+// PanopticFactory interactions
+
+export async function getPanopticPool(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: GetPanopticPoolRequest
+): Promise<GetPanopticPoolResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.getPanopticPool(
+    wallet,
+    req.uniswapV3PoolAddress
+  );
+
+  if (result instanceof Error) {
+    logger.error(`Error executing getPanopticPool: ${result.message}`);
+    return result;
+  }
+
   return {
-    tokenId: result.tokenId
+    panopticPoolAddress: result
   };
+}
+
+// Uniswap V3 interactions
+export async function checkUniswapPool(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: CheckUniswapV3PoolRequest
+): Promise<CheckUniswapV3PoolResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.checkUniswapPool(
+    wallet,
+    req.t0_address,
+    req.t1_address,
+    req.fee
+  );
+
+  if (result instanceof Error) {
+    logger.error(`Error executing checkUniswapPool: ${result.message}`);
+    return result;
+  }
+
+  return {
+    uniswapV3PoolAddress: result
+  };
+}
+
+// UniswapPool interactions
+export async function getSpotPrice(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: GetSpotPriceRequest
+): Promise<GetSpotPriceResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.getSpotPrice(
+    wallet,
+    req.uniswapV3PoolAddress,
+    req.token0Decimals,
+    req.token1Decimals
+  );
+  if (result instanceof Error) {
+    logger.error(`Error executing getSpotPrice: ${result.message}`);
+    return result;
+  }
+  return {
+    spotPrice: result
+  };
+}
+
+export async function getTickSpacingAndInitializedTicks(
+  ethereumish: Ethereumish,
+  panopticish: Panoptic,
+  req: GetTickSpacingAndInitializedTicksRequest
+): Promise<GetTickSpacingAndInitializedTicksResponse | Error> {
+  const { wallet } = await txWriteData(ethereumish, req.address);
+  const result = await panopticish.getTickSpacingAndInitializedTicks(
+    wallet,
+    req.uniswapV3PoolAddress
+  );
+  if (result instanceof Error) {
+    logger.error(`Error executing getTickSpacingAndInitializedTicks: ${result.message}`);
+    return result;
+  }
+  return result
 }
