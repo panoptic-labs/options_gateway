@@ -21,8 +21,10 @@ import axios, { AxiosResponse } from 'axios';
 import {
   PositionLegInformation,
   CreatePositionResponse,
-  CheckCollateralResponse
+  CheckCollateralResponse,
+  TransactionBuildingResult
 } from '../../options/options.requests';
+
 export class Panoptic {
   private static _instances: { [name: string]: Panoptic };
   private chainInstance;
@@ -1218,10 +1220,20 @@ export class Panoptic {
     positionIdList: BigNumber[],
     positionSize: BigNumber,
     effectiveLiquidityLimit: BigNumber,
+    doNotBroadcast: boolean = false,
     tickLimitLow: number = this.LOWEST_POSSIBLE_TICK,
-    tickLimitHigh: number = this.HIGHEST_POSSIBLE_TICK
-  ): Promise<ContractReceipt | Error> {
+    tickLimitHigh: number = this.HIGHEST_POSSIBLE_TICK,
+  ): Promise<TransactionBuildingResult> {
     try {
+      console.log('executeMint args:')
+      console.log(wallet)
+      console.log(panopticPool)
+      console.log(positionIdList)
+      console.log(positionSize)
+      console.log(effectiveLiquidityLimit)
+      console.log(doNotBroadcast)
+      console.log(tickLimitLow)
+      console.log(tickLimitHigh)
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
 
       let gasEstimate: number;
@@ -1242,7 +1254,8 @@ export class Panoptic {
         return new Error(`Error on executeMint: Gas limit exceeded, gas estimate limit (${gasLimit}) greater than tx cap (${this.absoluteGasLimit})...`);
       }
       console.log("Using gas limit: ", gasLimit);
-      const tx: ContractTransaction = await panopticPoolContract.mintOptions(
+
+      const populatedTx = await panopticPoolContract.populateTransaction.mintOptions(
         positionIdList,
         positionSize,
         effectiveLiquidityLimit,
@@ -1250,8 +1263,21 @@ export class Panoptic {
         tickLimitHigh,
         { gasLimit: BigNumber.from(gasLimit) }
       );
-      const receipt: ContractReceipt = await tx.wait();
-      return receipt;
+
+      if (doNotBroadcast) {
+        return {
+          receipt: null,
+          unsignedTransaction: populatedTx
+        };
+      }
+
+      const tx = await wallet.sendTransaction(populatedTx);
+      const receipt = await tx.wait();
+
+      return {
+        receipt,
+        unsignedTransaction: populatedTx
+      };
     } catch (error) {
       return new Error("Error on mintOptions: " + (error as Error).message);
     }
