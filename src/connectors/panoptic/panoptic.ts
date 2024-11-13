@@ -1225,15 +1225,6 @@ export class Panoptic {
     tickLimitHigh: number = this.HIGHEST_POSSIBLE_TICK,
   ): Promise<TransactionBuildingResult> {
     try {
-      console.log('executeMint args:')
-      console.log(wallet)
-      console.log(panopticPool)
-      console.log(positionIdList)
-      console.log(positionSize)
-      console.log(effectiveLiquidityLimit)
-      console.log(doNotBroadcast)
-      console.log(tickLimitLow)
-      console.log(tickLimitHigh)
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
 
       let gasEstimate: number;
