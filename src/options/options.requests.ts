@@ -1,14 +1,17 @@
-import {
-  NetworkSelectionRequest,
-} from '../services/common-interfaces';
 import { BigNumber, Wallet } from 'ethers';
-import { ContractReceipt } from 'ethers';
+import { ContractReceipt, PopulatedTransaction } from 'ethers';
+
+export type TransactionBuildingResult = {
+  receipt: ContractReceipt | null;
+  unsignedTransaction: PopulatedTransaction;
+} | Error;
 
 export interface PanopticRequest {
   chain: string;
   network: string;
   connector?: string | undefined;
   address?: string;
+  doNotBroadcast?: boolean;
 }
 
 export interface PanopticPoolRequest extends PanopticRequest {
@@ -20,7 +23,8 @@ export interface BroadcastedTxResponse {
   timestamp?: number;
   nonce?: number;
   txHash?: string | BigNumber;
-  tx?: { [key: string]: any };
+  // note the difference between null and undefined here - null is for when you doNotBroadcast
+  tx?: { [key: string]: any } | null;
 }
 
 export interface EstimateGasResponse {
@@ -402,11 +406,11 @@ export interface LiquidateRequest extends PanopticPoolRequest {
   address: string;
 }
 
-export interface LiquidateResponse extends BroadcastedTxResponse{
+export interface LiquidateResponse extends BroadcastedTxResponse {
   tx: ContractReceipt;
 }
 
-export interface ExecuteMintRequest extends NetworkSelectionRequest {
+export interface ExecuteMintRequest extends PanopticRequest {
   address: string;
   positionIdList: BigNumber[];
   positionSize: BigNumber;
@@ -580,8 +584,9 @@ export interface BurnResponse {
   other?: any
 }
 
-export interface MintResponse extends BroadcastedTxResponse{
-  tx: ContractReceipt;
+export interface MintResponse extends BroadcastedTxResponse {
+  tx: ContractReceipt | null;
+  unsignedTransaction: PopulatedTransaction;
   latency?: number;
   base?: string;
   quote?: string;

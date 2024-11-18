@@ -44,6 +44,16 @@ paths:
       tags:
         - 'options'
       summary: 'Burn options tokens'
+  /options/burnAndMint:
+    post:
+      tags:
+        - 'options'
+      summary: 'Burn options tokens and remints the supplied new ones in one multicall transaction'
+  /options/checkCollateral:
+    post:
+      tags:
+        - 'options'
+      summary: 'Checks your collateral'
   /options/calculateAccumulatedFeesBatch:
     post:
       tags:

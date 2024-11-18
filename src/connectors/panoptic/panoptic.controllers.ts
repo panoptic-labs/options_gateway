@@ -96,6 +96,7 @@ import {
   GetSpotPriceResponse,
   GetTickSpacingAndInitializedTicksRequest,
   GetTickSpacingAndInitializedTicksResponse,
+  TransactionBuildingResult
 } from '../../options/options.requests';
 import { Panoptic } from '../panoptic/panoptic';
 import { gasCostInEthString } from '../../services/base';
@@ -1102,38 +1103,39 @@ export async function mint(
   try {
     const { wallet } = await txWriteData(ethereumish, req.address);
     const gasPrice: number = ethereumish.gasPrice;
-    const tx: ContractReceipt | Error = await panopticish.executeMint(
+    const mintTx: TransactionBuildingResult = await panopticish.executeMint(
       wallet,
       req.panopticPool,
       req.positionIdList,
       BigNumber.from(req.positionSize),
       req.effectiveLiquidityLimit,
+      req.doNotBroadcast
     );
 
-    if (tx instanceof Error) {
-      logger.error(`Error executing mint: ${tx.message}`);
-      return tx;
+    if (mintTx instanceof Error) {
+      logger.error(`Error executing mint: ${mintTx.message}`);
+      return mintTx;
     }
 
-    if (tx.transactionHash) {
+    if (mintTx.receipt) {
       await ethereumish.txStorage.saveTx(
         ethereumish.chain,
         ethereumish.chainId,
-        tx.transactionHash,
+        mintTx.receipt.transactionHash,
         new Date(),
         ethereumish.gasPrice
       );
+      logger.info(
+        `Mint has been executed, txHash is ${mintTx.receipt.transactionHash}, gasPrice is ${gasPrice}, gas used is ${mintTx.receipt.gasUsed}.`
+      );
     }
 
-    logger.info(
-      `Mint has been executed, txHash is ${tx.transactionHash}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
-    );
-
     return {
-      tx: tx,
+      tx: mintTx.receipt,
       network: ethereumish.chain,
       timestamp: startTimestamp,
-      txHash: tx.transactionHash,
+      txHash: mintTx.receipt?.transactionHash,
+      unsignedTransaction: mintTx.unsignedTransaction,
     };
   } catch (error) {
     logger.error(`Unexpected error in mint function: ${error instanceof Error ? error.message : error}`);
