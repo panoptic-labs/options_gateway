@@ -25,6 +25,7 @@ export interface BroadcastedTxResponse {
   txHash?: string | BigNumber;
   // note the difference between null and undefined here - null is for when you doNotBroadcast
   tx?: { [key: string]: any } | null;
+  unsignedTransaction: PopulatedTransaction;
 }
 
 export interface EstimateGasResponse {
@@ -394,7 +395,7 @@ export interface ForceExerciseRequest extends PanopticPoolRequest {
 }
 
 export interface ForceExerciseResponse extends BroadcastedTxResponse{
-  tx: ContractReceipt;
+  tx: ContractReceipt | null;
 }
 
 export interface LiquidateRequest extends PanopticPoolRequest {
@@ -407,7 +408,7 @@ export interface LiquidateRequest extends PanopticPoolRequest {
 }
 
 export interface LiquidateResponse extends BroadcastedTxResponse {
-  tx: ContractReceipt;
+  tx: ContractReceipt | null;
 }
 
 export interface ExecuteMintRequest extends PanopticRequest {
@@ -444,7 +445,7 @@ export interface PokeMedianRequest extends PanopticPoolRequest {
 }
 
 export interface PokeMedianResponse extends BroadcastedTxResponse{
-  tx: ContractReceipt;
+  tx: ContractReceipt | null;
 }
 
 export interface SettleLongPremiumRequest extends PanopticPoolRequest {
@@ -456,7 +457,7 @@ export interface SettleLongPremiumRequest extends PanopticPoolRequest {
 }
 
 export interface SettleLongPremiumResponse extends BroadcastedTxResponse{
-  tx: ContractReceipt;
+  tx: ContractReceipt | null;
 }
 
 export interface DepositRequest extends PanopticRequest {
@@ -476,7 +477,7 @@ export interface GetAssetRequest extends PanopticRequest {
   address: string;
 }
 
-export interface GetAssetResponse extends BroadcastedTxResponse{
+export interface GetAssetResponse {
   assetTokenAddress?: string;
 }
 
@@ -559,8 +560,8 @@ export interface GetAccountFeesBaseResponse {
   feesBase1: BigNumber;
 }
 
-export interface BurnResponse {
-  tx: ContractReceipt;
+export interface BurnResponse extends BroadcastedTxResponse {
+  tx: ContractReceipt | null;
   network?: string;
   timestamp?: number;
   latency?: number;
@@ -586,7 +587,6 @@ export interface BurnResponse {
 
 export interface MintResponse extends BroadcastedTxResponse {
   tx: ContractReceipt | null;
-  unsignedTransaction: PopulatedTransaction;
   latency?: number;
   base?: string;
   quote?: string;

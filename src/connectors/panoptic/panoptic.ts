@@ -1,9 +1,7 @@
 import {
   BigNumber,
   Contract,
-  Wallet,
-  ContractTransaction,
-  ContractReceipt
+  Wallet
 } from 'ethers';
 import { PanopticConfig } from './panoptic.config';
 import {
@@ -1035,9 +1033,10 @@ export class Panoptic {
     panopticPool: string,
     burnTokenId: BigNumber,
     newPositionIdList: BigNumber[],
+    doNotBroadcast: boolean = false,
     tickLimitLow: number = this.LOWEST_POSSIBLE_TICK,
     tickLimitHigh: number = this.HIGHEST_POSSIBLE_TICK
-  ): Promise<ContractReceipt | Error> {
+  ): Promise<TransactionBuildingResult> {
     try {
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
       let gasEstimate: number;
@@ -1057,15 +1056,27 @@ export class Panoptic {
       if (gasLimit > this.absoluteGasLimit) {
         return new Error(`Error on executeBurn: Gas limit exceeded, gas estimate limit (${gasLimit}) greater than tx cap (${this.absoluteGasLimit})...`);
       }
-      const tx: ContractTransaction = await panopticPoolContract["burnOptions(uint256,uint256[],int24,int24)"](
+      const populatedTx = await panopticPoolContract.populateTransaction["burnOptions(uint256,uint256[],int24,int24)"](
         burnTokenId,
         newPositionIdList,
         tickLimitLow,
         tickLimitHigh,
         { gasLimit: BigNumber.from(gasLimit) }
       );
-      const receipt: ContractReceipt = await tx.wait();
-      return receipt;
+
+      if (doNotBroadcast) {
+        return {
+          receipt: null,
+          unsignedTransaction: populatedTx
+        };
+      }
+
+      const tx = await wallet.sendTransaction(populatedTx);
+      const receipt = await tx.wait();
+      return {
+        receipt,
+        unsignedTransaction: populatedTx
+      };
     } catch (error) {
       return new Error("Error on executeBurn: " + (error as Error).message);
     }
@@ -1079,11 +1090,12 @@ export class Panoptic {
     mintTokenId: BigNumber,
     positionSize: BigNumber,
     effectiveLiquidityLimit: BigNumber,
+    doNotBroadcast: boolean = false,
     burnTickLimitLow: number = this.LOWEST_POSSIBLE_TICK,
     burnTickLimitHigh: number = this.HIGHEST_POSSIBLE_TICK,
     mintTickLimitLow: number = this.LOWEST_POSSIBLE_TICK,
     mintTickLimitHigh: number = this.HIGHEST_POSSIBLE_TICK
-  ): Promise<ContractReceipt | Error> {
+  ): Promise<TransactionBuildingResult> {
     try {
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
 
@@ -1110,7 +1122,7 @@ export class Panoptic {
         )).toNumber();
       } catch (error) {
         console.log("Unable to estimate gas. Using max allocation.");
-        gasEstimate = this.absoluteGasLimit/(this.gasLimitCushionFactor*this.gasLimitCushionFactor);
+        gasEstimate = this.absoluteGasLimit/(this.gasLimitCushionFactor * this.gasLimitCushionFactor);
       }
 
       const gasLimit: number = Math.ceil(this.gasLimitCushionFactor * gasEstimate);
@@ -1122,14 +1134,25 @@ export class Panoptic {
 
       console.log("Using gas limit: ", gasLimit);
 
-      // Execute multicall
-      const tx: ContractTransaction = await panopticPoolContract.multicall(
+      // Construct & possibly execute multicall
+      const populatedTx = await panopticPoolContract.populateTransaction.multicall(
         [burnCalldata, mintCalldata],
         { gasLimit: BigNumber.from(gasLimit) }
       );
+      if (doNotBroadcast) {
+        return {
+          receipt: null,
+          unsignedTransaction: populatedTx
+        }
+      }
 
-      const receipt: ContractReceipt = await tx.wait();
-      return receipt;
+      const tx = await wallet.sendTransaction(populatedTx);
+      const receipt = await tx.wait();
+
+      return {
+        receipt,
+        unsignedTransaction: populatedTx
+      };
     } catch (error) {
       return new Error("Error on executeBurnAndMint: " + (error as Error).message);
     }
@@ -1140,8 +1163,9 @@ export class Panoptic {
     panopticPool: string,
     touchedId: BigNumber[],
     positionIdListExercisee: BigNumber[],
-    positionIdListExercisor: BigNumber[]
-  ): Promise<ContractReceipt | Error> {
+    positionIdListExercisor: BigNumber[],
+    doNotBroadcast: boolean = false
+  ): Promise<TransactionBuildingResult> {
     try {
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
       let gasEstimate: number;
@@ -1154,21 +1178,35 @@ export class Panoptic {
         )).toNumber();
       } catch (error) {
         console.log("Unable to estimate gas. Using max allocation.")
-        gasEstimate = this.absoluteGasLimit/(this.gasLimitCushionFactor*this.gasLimitCushionFactor);
+        // TODO: replace all of these into a helper and figure out why its absoluteGasLimit / (gasLimitCushion^2) / come up with something better
+        gasEstimate = this.absoluteGasLimit / (this.gasLimitCushionFactor * this.gasLimitCushionFactor);
       }
       const gasLimit: number = Math.ceil(this.gasLimitCushionFactor * gasEstimate);
       if (gasLimit > this.absoluteGasLimit) {
         return new Error(`Error on forceExercise: Gas limit exceeded, gas estimate limit (${gasLimit}) greater than tx cap (${this.absoluteGasLimit})...`);
       }
-      const tx: ContractTransaction = await panopticPoolContract.forceExercise(
+      const populatedTx = await panopticPoolContract.populateTransaction.forceExercise(
         wallet.address,
         touchedId,
         positionIdListExercisee,
         positionIdListExercisor,
         { gasLimit: BigNumber.from(gasLimit) }
       );
-      const receipt: ContractReceipt = await tx.wait();
-      return receipt;
+
+      if (doNotBroadcast) {
+        return {
+          receipt: null,
+          unsignedTransaction: populatedTx
+        };
+      }
+
+      const tx = await wallet.sendTransaction(populatedTx);
+      const receipt = await tx.wait();
+
+      return {
+        receipt,
+        unsignedTransaction: populatedTx
+      };
     } catch (error) {
       return new Error("Error on forceExercise: " + (error as Error).message);
     }
@@ -1180,8 +1218,9 @@ export class Panoptic {
     positionIdListLiquidator: BigNumber[],
     liquidatee: BigNumber,
     delegations: number,
-    positionIdList: BigNumber[]
-  ): Promise<ContractReceipt | Error> {
+    positionIdList: BigNumber[],
+    doNotBroadcast: boolean = false
+  ): Promise<TransactionBuildingResult> {
     try {
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
       let gasEstimate: number;
@@ -1194,21 +1233,34 @@ export class Panoptic {
         )).toNumber();
       } catch (error) {
         console.log("Unable to estimate gas. Using max allocation.")
-        gasEstimate = this.absoluteGasLimit/(this.gasLimitCushionFactor*this.gasLimitCushionFactor);
+        gasEstimate = this.absoluteGasLimit/(this.gasLimitCushionFactor * this.gasLimitCushionFactor);
       }
       const gasLimit: number = Math.ceil(this.gasLimitCushionFactor * gasEstimate);
       if (gasLimit > this.absoluteGasLimit) {
         return new Error(`Error on liquidate: Gas limit exceeded, gas estimate limit (${gasLimit}) greater than tx cap (${this.absoluteGasLimit})...`);
       }
-      const tx: ContractTransaction = await panopticPoolContract.liquidate(
+      const populatedTx = await panopticPoolContract.populateTransaction.liquidate(
         positionIdListLiquidator,
         liquidatee,
         delegations,
         positionIdList,
         { gasLimit: BigNumber.from(gasLimit) }
       );
-      const receipt: ContractReceipt = await tx.wait();
-      return receipt;
+
+      if (doNotBroadcast) {
+        return {
+          receipt: null,
+          unsignedTransaction: populatedTx
+        };
+      }
+
+      const tx = await wallet.sendTransaction(populatedTx);
+      const receipt = await tx.wait();
+
+      return {
+        receipt,
+        unsignedTransaction: populatedTx
+      };
     } catch (error) {
       return new Error("Error on liquidate: " + (error as Error).message);
     }
@@ -1304,8 +1356,9 @@ export class Panoptic {
 
   async pokeMedian(
     wallet: Wallet,
-    panopticPool: string
-  ): Promise<ContractReceipt | Error> {
+    panopticPool: string,
+    doNotBroadcast: boolean = false
+  ): Promise<TransactionBuildingResult> {
     try {
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
       let gasEstimate: number;
@@ -1319,11 +1372,24 @@ export class Panoptic {
       if (gasLimit > this.absoluteGasLimit) {
         return new Error(`Error on pokeMedian: Gas limit exceeded, gas estimate limit (${gasLimit}) greater than tx cap (${this.absoluteGasLimit})...`);
       }
-      const tx: ContractTransaction = await panopticPoolContract.pokeMedian(
-        { gasLimit: BigNumber.from(gasLimit)}
+      const populatedTx = await panopticPoolContract.populateTransaction.pokeMedian(
+        { gasLimit: BigNumber.from(gasLimit) }
       );
-      const receipt: ContractReceipt = await tx.wait();
-      return receipt;
+
+      if (doNotBroadcast) {
+        return {
+          receipt: null,
+          unsignedTransaction: populatedTx
+        };
+      }
+
+      const tx = await wallet.sendTransaction(populatedTx);
+      const receipt = await tx.wait();
+
+      return {
+        receipt,
+        unsignedTransaction: populatedTx
+      };
     } catch (error) {
       return new Error("Error on pokeMedian: " + (error as Error).message);
     }
@@ -1334,8 +1400,9 @@ export class Panoptic {
     panopticPool: string,
     positionIdList: BigNumber[],
     owner: BigNumber,
-    legIndex: BigNumber
-  ): Promise<ContractReceipt | Error> {
+    legIndex: BigNumber,
+    doNotBroadcast: boolean = false
+  ): Promise<TransactionBuildingResult> {
     try {
       const panopticPoolContract = new Contract(panopticPool, panopticPoolAbi.abi, wallet);
       let gasEstimate: number;
@@ -1353,14 +1420,27 @@ export class Panoptic {
       if (gasLimit > this.absoluteGasLimit) {
         return new Error(`Error on settleLongPremium: Gas limit exceeded, gas estimate limit (${gasLimit}) greater than tx cap (${this.absoluteGasLimit})...`);
       }
-      const tx: ContractTransaction = await panopticPoolContract.settleLongPremium(
+      const populatedTx = await panopticPoolContract.populateTransaction.settleLongPremium(
         positionIdList,
         owner,
         legIndex,
         { gasLimit: BigNumber.from(gasLimit) }
       );
-      const receipt: ContractReceipt = await tx.wait();
-      return receipt;
+
+      if (doNotBroadcast) {
+        return {
+          receipt: null,
+          unsignedTransaction: populatedTx
+        };
+      }
+
+      const tx = await wallet.sendTransaction(populatedTx);
+      const receipt = await tx.wait();
+
+      return {
+        receipt,
+        unsignedTransaction: populatedTx
+      };
     } catch (error) {
       return new Error("Error on settleLongPremium: " + (error as Error).message);
     }
@@ -1370,8 +1450,9 @@ export class Panoptic {
   async deposit(
     wallet: Wallet,
     collateralTrackerContract: BigNumber,
-    assets: BigNumber
-  ): Promise<ContractReceipt | Error> {
+    assets: BigNumber,
+    doNotBroadcast: boolean = false
+  ): Promise<TransactionBuildingResult> {
     try {
       const tokenContract = new Contract(collateralTrackerContract.toString(), collateralTrackerAbi.abi, wallet);
       let gasEstimate: number;
@@ -1388,13 +1469,26 @@ export class Panoptic {
       if (gasLimit > this.absoluteGasLimit) {
         return new Error(`Error on deposit: Gas limit exceeded, gas estimate limit (${gasLimit}) greater than tx cap (${this.absoluteGasLimit})...`);
       }
-      const tx: ContractTransaction = await tokenContract.deposit(
+      const populatedTx = await tokenContract.populateTransaction.deposit(
         assets,
         wallet.address,
         { gasLimit: BigNumber.from(gasLimit) }
       );
-      const receipt: ContractReceipt = await tx.wait();
-      return receipt;
+
+      if (doNotBroadcast) {
+        return {
+          receipt: null,
+          unsignedTransaction: populatedTx
+        };
+      }
+
+      const tx = await wallet.sendTransaction(populatedTx);
+      const receipt = await tx.wait();
+
+      return {
+        receipt,
+        unsignedTransaction: populatedTx
+      };
     } catch (error) {
       return new Error("Error on deposit: " + (error as Error).message);
     }
@@ -1403,13 +1497,12 @@ export class Panoptic {
   async getAsset(
     wallet: Wallet,
     collateralTrackerContract: BigNumber
-  ): Promise<ContractReceipt | Error> {
+  ): Promise<{"asset" : string} | Error> {
     try {
-      const tokenContract = new Contract(collateralTrackerContract.toString(), collateralTrackerAbi.abi, wallet);
-      const receipt = await tokenContract.asset();
-      return receipt;
+      const CollateralTracker = new Contract(collateralTrackerContract.toString(), collateralTrackerAbi.abi, wallet);
+      return await CollateralTracker.asset();
     } catch (error) {
-      return new Error("Error on asset: " + (error as Error).message);
+      return new Error("Error on getAsset: " + (error as Error).message);
     }
   }
 
@@ -1440,8 +1533,9 @@ export class Panoptic {
   async withdraw(
     wallet: Wallet,
     collateralTrackerContract: BigNumber,
-    assets: BigNumber
-  ): Promise<ContractReceipt | Error> {
+    assets: BigNumber,
+    doNotBroadcast: boolean = false
+  ): Promise<TransactionBuildingResult> {
     try {
       const tokenContract = new Contract(collateralTrackerContract.toString(), collateralTrackerAbi.abi, wallet);
       let gasEstimate: number;
@@ -1459,14 +1553,27 @@ export class Panoptic {
       if (gasLimit > this.absoluteGasLimit) {
         return new Error(`Error on withdraw: Gas limit exceeded, gas estimate limit (${gasLimit}) greater than tx cap (${this.absoluteGasLimit})...`);
       }
-      const tx: ContractTransaction = await tokenContract.withdraw(
+      const populatedTx = await tokenContract.populateTransaction.withdraw(
         assets,
         wallet.address,
         wallet.address,
         { gasLimit: BigNumber.from(gasLimit) }
       );
-      const receipt: ContractReceipt = await tx.wait();
-      return receipt;
+
+      if (doNotBroadcast) {
+        return {
+          receipt: null,
+          unsignedTransaction: populatedTx
+        };
+      }
+
+      const tx = await wallet.sendTransaction(populatedTx);
+      const receipt = await tx.wait();
+
+      return {
+        receipt,
+        unsignedTransaction: populatedTx
+      };
     } catch (error) {
       return new Error("Error on withdraw: " + (error as Error).message);
     }
