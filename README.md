@@ -25,7 +25,7 @@ Step 1: Get hummingbot set up:
 7. The Hummingbot UI should now present itself! You can now set a password.
 8. The Hummingbot Shell will now present itself. You can then `gateway generate-certs` to generate certificates and secure your Hummingbot instance.
     1. You’ll be prompted to set a password and it’ll list the directory those certificates are stored in.
-    2. Copy the directory path it generates these certificates though.
+    2. Copy the directory path it generates these certificates to.
     3. For many users, this was `~/panoptic_hummingbot/certs`. This is just a certs folder in the same folder as your hummingbot repo.
 
 Step 2: Set up this fork of the Hummingbot Gateway:
@@ -36,7 +36,7 @@ Step 2: Set up this fork of the Hummingbot Gateway:
 4. `yarn build`
 5. Give permissions to the gateway setup script: `chmod a+x gateway-setup.sh`
 6. Then run it: `./gateway-setup.sh`
-7. It will prompt you to copy over the certs, enter the path (and possibly password) for those certs you just generated in (8)(i). Enter the path.
+7. It will prompt you to copy over the certificates from your Hummingbot (step (8)(i) above). Enter the path (and possibly passphrase) for those certs.
 
 Step 3: Launch the Gateway:
 
@@ -50,6 +50,8 @@ Finally, back in the Hummingbot UI tab, you should see Gateway: ONLINE in the na
 4. Be sure to approve your tokens to appropriate spenders, such as Uniswap or Panoptic contracts, to see valid gas estimates.
 
 From here, you should be able to implement strategies in the `panoptic_hummingbot` repo that call to your local instance of the Gateway, leveraging the Panoptic Gateway methods. You can, of course, write your own code as well that leverages this gateway, by just making calls to `localhost:8080`.
+
+Note that we provide a `doNotBroadcast` flag on Panoptic endpoints, allowing you to use the Gateway as a generic transaction-building API. You can modify `conf/server.yml`'s `unsafeDevModeWithHTTP` flag to `true` to take advantage of this easily without setting up dual TLS handshaking, if you're just going to keep this Gateway and your integration communicating locally on the same machine.
 
 Please [reach out](https://discord.com/invite/8sX5Af2KXG) if you have any issues!
 

@@ -1,4 +1,4 @@
-import { BigNumber, Wallet, ContractReceipt } from 'ethers';
+import { BigNumber, VoidSigner, Wallet } from 'ethers';
 import {
   HttpException,
   LOAD_WALLET_ERROR_CODE,
@@ -111,10 +111,11 @@ export interface TradeInfo {
 export async function txWriteData(
   ethereumish: Ethereumish,
   address: string,
+  doNotBroadcast?: boolean,
   maxFeePerGas?: string,
-  maxPriorityFeePerGas?: string
+  maxPriorityFeePerGas?: string,
 ): Promise<{
-  wallet: Wallet;
+  wallet: Wallet | VoidSigner;
   maxFeePerGasBigNumber: BigNumber | undefined;
   maxPriorityFeePerGasBigNumber: BigNumber | undefined;
 }> {
@@ -127,17 +128,22 @@ export async function txWriteData(
     maxPriorityFeePerGasBigNumber = BigNumber.from(maxPriorityFeePerGas);
   }
 
-  let wallet: Wallet;
-  try {
-    wallet = await ethereumish.getWallet(address);
-  } catch (err) {
-    logger.error(`Wallet ${address} not available.`);
-    throw new HttpException(
-      500,
-      LOAD_WALLET_ERROR_MESSAGE + err,
-      LOAD_WALLET_ERROR_CODE
-    );
+  let wallet: Wallet | VoidSigner;
+  if (doNotBroadcast) {
+    wallet = new VoidSigner(address, ethereumish.provider);
+  } else {
+    try {
+      wallet = await ethereumish.getWallet(address);
+    } catch (err) {
+      logger.error(`Wallet ${address} not available.`);
+      throw new HttpException(
+        500,
+        LOAD_WALLET_ERROR_MESSAGE + err,
+        LOAD_WALLET_ERROR_CODE
+      );
+    }
   }
+
   return { wallet, maxFeePerGasBigNumber, maxPriorityFeePerGasBigNumber };
 }
 
@@ -241,7 +247,7 @@ export async function queryPositions(
   panopticish: Panoptic,
   req: QueryPositionsRequest
 ): Promise<QueryPositionsResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.queryPositions(wallet, req.panopticPool);
 
   if (result instanceof Error) {
@@ -272,7 +278,7 @@ export async function queryPrice(
   panopticish: Panoptic,
   req: QueryPriceRequest
 ): Promise<QueryPriceResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.queryPrice(
     wallet,
     req.uniV3Pool
@@ -317,7 +323,7 @@ export async function checkCollateral(
   panopticish: Panoptic,
   req: CheckCollateralRequest
 ): Promise<CheckCollateralResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.checkCollateral(
     wallet,
     req.panopticPool,
@@ -339,7 +345,7 @@ export async function createBigLizard(
   panopticish: Panoptic,
   req: CreateBigLizardRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createBigLizard(
     wallet,
     req.univ3pool,
@@ -362,7 +368,7 @@ export async function createCallCalendarSpread(
   panopticish: Panoptic,
   req: CreateCallCalendarSpreadRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createCallCalendarSpread(
     wallet,
     req.univ3pool,
@@ -387,7 +393,7 @@ export async function createCallDiagonalSpread(
   panopticish: Panoptic,
   req: CreateCallDiagonalSpreadRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createCallDiagonalSpread(
     wallet,
     req.univ3pool,
@@ -413,7 +419,7 @@ export async function createCallRatioSpread(
   panopticish: Panoptic,
   req: CreateCallRatioSpreadRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createCallRatioSpread(
     wallet,
     req.univ3pool,
@@ -438,7 +444,7 @@ export async function createCallSpread(
   panopticish: Panoptic,
   req: CreateCallSpreadRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createCallSpread(
     wallet,
     req.univ3pool,
@@ -463,7 +469,7 @@ export async function createCallZEBRASpread(
   panopticish: Panoptic,
   req: CreateCallZEBRASpreadRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createCallZEBRASpread(
     wallet,
     req.univ3pool,
@@ -488,7 +494,7 @@ export async function createIronButterfly(
   panopticish: Panoptic,
   req: CreateIronButterflyRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createIronButterfly(
     wallet,
     req.univ3pool,
@@ -511,7 +517,7 @@ export async function createIronCondor(
   panopticish: Panoptic,
   req: CreateIronCondorRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createIronCondor(
     wallet,
     req.univ3pool,
@@ -535,7 +541,7 @@ export async function createJadeLizard(
   panopticish: Panoptic,
   req: CreateJadeLizardRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createJadeLizard(
     wallet,
     req.univ3pool,
@@ -559,7 +565,7 @@ export async function createPutCalendarSpread(
   panopticish: Panoptic,
   req: CreatePutCalendarSpreadRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createPutCalendarSpread(
     wallet,
     req.univ3pool,
@@ -584,7 +590,7 @@ export async function createPutDiagonalSpread(
   panopticish: Panoptic,
   req: CreatePutDiagonalSpreadRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createPutDiagonalSpread(
     wallet,
     req.univ3pool,
@@ -610,7 +616,7 @@ export async function createPutRatioSpread(
   panopticish: Panoptic,
   req: CreatePutRatioSpreadRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createPutRatioSpread(
     wallet,
     req.univ3pool,
@@ -635,7 +641,7 @@ export async function createPutSpread(
   panopticish: Panoptic,
   req: CreatePutSpreadRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createPutSpread(
     wallet,
     req.univ3pool,
@@ -660,7 +666,7 @@ export async function createPutZEBRASpread(
   panopticish: Panoptic,
   req: CreatePutZEBRASpreadRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createPutZEBRASpread(
     wallet,
     req.univ3pool,
@@ -685,7 +691,7 @@ export async function createStraddle(
   panopticish: Panoptic,
   req: CreateStraddleRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createStraddle(
     wallet,
     req.univ3pool,
@@ -710,7 +716,7 @@ export async function createStrangle(
   panopticish: Panoptic,
   req: CreateStrangleRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createStrangle(
     wallet,
     req.univ3pool,
@@ -736,7 +742,7 @@ export async function createSuperBear(
   panopticish: Panoptic,
   req: CreateSuperBearRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createSuperBear(
     wallet,
     req.univ3pool,
@@ -760,7 +766,7 @@ export async function createSuperBull(
   panopticish: Panoptic,
   req: CreateSuperBullRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createSuperBull(
     wallet,
     req.univ3pool,
@@ -784,7 +790,7 @@ export async function createZEEHBS(
   panopticish: Panoptic,
   req: CreateZEEHBSRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.createZEEHBS(
     wallet,
     req.univ3pool,
@@ -808,7 +814,7 @@ export async function unwrapTokenId(
   panopticish: Panoptic,
   req: UnwrapTokenIdRequest
 ): Promise<UnwrapTokenIdResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.unwrapTokenId(
     wallet,
     req.tokenId
@@ -831,7 +837,7 @@ export async function calculateAccumulatedFeesBatch(
   panopticish: Panoptic,
   req: CalculateAccumulatedFeesBatchRequest
 ): Promise<CalculateAccumulatedFeesBatchResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.calculateAccumulatedFeesBatch(
     wallet,
     req.panopticPool,
@@ -856,7 +862,7 @@ export async function getCollateralToken0(
   panopticish: Panoptic,
   req: CollateralTokenRequest
 ): Promise<CollateralTokenResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.collateralToken0(
     wallet,
     req.panopticPool
@@ -877,7 +883,7 @@ export async function getCollateralToken1(
   panopticish: Panoptic,
   req: CollateralTokenRequest
 ): Promise<CollateralTokenResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, true);
   const result = await panopticish.collateralToken1(
     wallet,
     req.panopticPool
@@ -900,41 +906,43 @@ export async function burn(
 ): Promise<BurnResponse | Error> {
   const startTimestamp: number = Date.now();
   try {
-    const { wallet } = await txWriteData(ethereumish, req.address);
+    const { wallet } = await txWriteData(ethereumish, req.address, req.doNotBroadcast);
     const gasPrice: number = ethereumish.gasPrice;
-    const tx: ContractReceipt | Error = await panopticish.executeBurn(
+    const burnTx: TransactionBuildingResult = await panopticish.executeBurn(
       wallet,
       req.panopticPool,
       req.burnTokenId,
       req.newPositionIdList,
+      req.doNotBroadcast,
       req.tickLimitLow,
-      req.tickLimitHigh,
+      req.tickLimitHigh
     );
 
-    if (tx instanceof Error) {
-      logger.error(`Error executing burn: ${tx.message}`);
-      return tx;
+    if (burnTx instanceof Error) {
+      logger.error(`Error executing burn: ${burnTx.message}`);
+      return burnTx;
     }
 
-    if (tx.transactionHash) {
+    if (burnTx.receipt) {
       await ethereumish.txStorage.saveTx(
         ethereumish.chain,
         ethereumish.chainId,
-        tx.transactionHash,
+        burnTx.receipt.transactionHash,
         new Date(),
         ethereumish.gasPrice
       );
+
+      logger.info(
+        `Burn has been executed, txHash is ${burnTx.receipt.transactionHash}, gasPrice is ${gasPrice}, gas used is ${burnTx.receipt.gasUsed}.`
+      );
     }
 
-    logger.info(
-      `Burn has been executed, txHash is ${tx.transactionHash}, nonce is ${tx.transactionIndex}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
-    );
-
     return {
-      tx: tx,
+      tx: burnTx.receipt,
       network: ethereumish.chain,
       timestamp: startTimestamp,
-      txHash: tx.transactionHash,
+      txHash: burnTx.receipt?.transactionHash,
+      unsignedTransaction: burnTx.unsignedTransaction
     };
   } catch (error) {
     logger.error(`Unexpected error in burn function: ${error instanceof Error ? error.message : error}`);
@@ -949,9 +957,9 @@ export async function burnAndMint(
 ): Promise<BurnResponse | Error> {
   const startTimestamp: number = Date.now();
   try {
-    const { wallet } = await txWriteData(ethereumish, req.address);
+    const { wallet } = await txWriteData(ethereumish, req.address, req.doNotBroadcast);
     const gasPrice: number = ethereumish.gasPrice;
-    const tx: ContractReceipt | Error = await panopticish.executeBurnAndMint(
+    const burnAndMintTx: TransactionBuildingResult = await panopticish.executeBurnAndMint(
       wallet,
       req.panopticPool,
       req.burnTokenId,
@@ -959,36 +967,39 @@ export async function burnAndMint(
       req.mintTokenId,
       req.positionSize,
       req.effectiveLiquidityLimit,
+      req.doNotBroadcast,
       req.burnTickLimitLow,
       req.burnTickLimitHigh,
       req.mintTickLimitLow,
-      req.mintTickLimitHigh,
+      req.mintTickLimitHigh
     );
 
-    if (tx instanceof Error) {
-      logger.error(`Error executing burn-and-mint multicall: ${tx.message}`);
-      return tx;
+    if (burnAndMintTx instanceof Error) {
+      logger.error(`Error executing burn-and-mint multicall: ${burnAndMintTx.message}`);
+      return burnAndMintTx;
     }
 
-    if (tx.transactionHash) {
+    if (burnAndMintTx.receipt) {
       await ethereumish.txStorage.saveTx(
         ethereumish.chain,
         ethereumish.chainId,
-        tx.transactionHash,
+        burnAndMintTx.receipt.transactionHash,
         new Date(),
         ethereumish.gasPrice
       );
+      logger.info(
+        `Burn-and-mint has been executed, txHash is ${burnAndMintTx.receipt.transactionHash}, nonce is ${burnAndMintTx.receipt.transactionIndex}, gasPrice is ${gasPrice}, gas used is ${burnAndMintTx.receipt.gasUsed}.`
+      );
     }
 
-    logger.info(
-      `Burn-and-mint has been executed, txHash is ${tx.transactionHash}, nonce is ${tx.transactionIndex}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
-    );
+
 
     return {
-      tx: tx,
+      tx: burnAndMintTx.receipt,
       network: ethereumish.chain,
       timestamp: startTimestamp,
-      txHash: tx.transactionHash,
+      txHash: burnAndMintTx.receipt?.transactionHash,
+      unsignedTransaction: burnAndMintTx.unsignedTransaction
     };
   } catch (error) {
     logger.error(`Unexpected error in burn-and-mint multicall: ${error instanceof Error ? error.message : error}`);
@@ -1004,40 +1015,42 @@ export async function forceExercise(
 ): Promise<ForceExerciseResponse | Error> {
   const startTimestamp: number = Date.now();
   try {
-    const { wallet } = await txWriteData(ethereumish, req.address);
+    const { wallet } = await txWriteData(ethereumish, req.address, req.doNotBroadcast);
     const gasPrice: number = ethereumish.gasPrice;
-    const tx: ContractReceipt | Error = await panopticish.forceExercise(
+    const forceExerciseTx: TransactionBuildingResult = await panopticish.forceExercise(
       wallet,
       req.panopticPool,
       req.touchedId,
       req.positionIdListExercisee,
       req.positionIdListExercisor,
+      req.doNotBroadcast
     );
 
-    if (tx instanceof Error) {
-      logger.error(`Error executing force exercise: ${tx.message}`);
-      return tx;
+    if (forceExerciseTx instanceof Error) {
+      logger.error(`Error executing force exercise: ${forceExerciseTx.message}`);
+      return forceExerciseTx;
     }
 
-    if (tx.transactionHash) {
+    if (forceExerciseTx.receipt) {
       await ethereumish.txStorage.saveTx(
         ethereumish.chain,
         ethereumish.chainId,
-        tx.transactionHash,
+        forceExerciseTx.receipt.transactionHash,
         new Date(),
         ethereumish.gasPrice
       );
-    }
 
-    logger.info(
-      `forceExercise has been executed, txHash is ${tx.transactionHash}, nonce is ${tx.transactionIndex}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
-    );
+      logger.info(
+        `forceExercise has been executed, txHash is ${forceExerciseTx.receipt.transactionHash}, nonce is ${forceExerciseTx.receipt.transactionIndex}, gasPrice is ${gasPrice}, gas used is ${forceExerciseTx.receipt.gasUsed}.`
+      );
+    }
 
     return {
       network: ethereumish.chain,
       timestamp: startTimestamp,
-      txHash: tx.transactionHash,
-      tx: tx
+      txHash: forceExerciseTx.receipt?.transactionHash,
+      tx: forceExerciseTx.receipt,
+      unsignedTransaction: forceExerciseTx.unsignedTransaction
     };
   } catch (error) {
     logger.error(`Unexpected error in force exercise function: ${error instanceof Error ? error.message : error}`);
@@ -1052,41 +1065,43 @@ export async function liquidate(
 ): Promise<LiquidateResponse | Error> {
   const startTimestamp: number = Date.now();
   try {
-    const { wallet } = await txWriteData(ethereumish, req.address);
+    const { wallet } = await txWriteData(ethereumish, req.address, req.doNotBroadcast);
     const gasPrice: number = ethereumish.gasPrice;
-    const tx: ContractReceipt | Error = await panopticish.liquidate(
+    const liquidationTx: TransactionBuildingResult = await panopticish.liquidate(
       wallet,
       req.panopticPool,
       req.positionIdListLiquidator,
       req.liquidatee,
       req.delegations,
-      req.positionIdList
+      req.positionIdList,
+      req.doNotBroadcast
     );
 
-    if (tx instanceof Error) {
-      logger.error(`Error executing liquidation: ${tx.message}`);
-      return tx;
+    if (liquidationTx instanceof Error) {
+      logger.error(`Error executing liquidation: ${liquidationTx.message}`);
+      return liquidationTx;
     }
 
-    if (tx.transactionHash) {
+    if (liquidationTx.receipt) {
       await ethereumish.txStorage.saveTx(
         ethereumish.chain,
         ethereumish.chainId,
-        tx.transactionHash,
+        liquidationTx.receipt.transactionHash,
         new Date(),
         ethereumish.gasPrice
       );
-    }
 
-    logger.info(
-      `Liquidation has been executed, txHash is ${tx.transactionHash}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
-    );
+      logger.info(
+        `Liquidation has been executed, txHash is ${liquidationTx.receipt.transactionHash}, gasPrice is ${gasPrice}, gas used is ${liquidationTx.receipt.gasUsed}.`
+      );
+    }
 
     return {
       network: ethereumish.chain,
       timestamp: startTimestamp,
-      txHash: tx.transactionHash,
-      tx: tx
+      txHash: liquidationTx.receipt?.transactionHash,
+      tx: liquidationTx.receipt,
+      unsignedTransaction: liquidationTx.unsignedTransaction
     };
   } catch (error) {
     logger.error(`Unexpected error in liquidation function: ${error instanceof Error ? error.message : error}`);
@@ -1101,7 +1116,7 @@ export async function mint(
 ): Promise<MintResponse | Error> {
   const startTimestamp: number = Date.now();
   try {
-    const { wallet } = await txWriteData(ethereumish, req.address);
+    const { wallet } = await txWriteData(ethereumish, req.address, req.doNotBroadcast);
     const gasPrice: number = ethereumish.gasPrice;
     const mintTx: TransactionBuildingResult = await panopticish.executeMint(
       wallet,
@@ -1148,7 +1163,7 @@ export async function numberOfPositions(
   panopticish: Panoptic,
   req: NumberOfPositionsRequest
 ): Promise<NumberOfPositionsResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.numberOfPositions(
     wallet,
     req.panopticPool
@@ -1169,7 +1184,7 @@ export async function optionPositionBalance(
   panopticish: Panoptic,
   req: OptionPositionBalanceRequest
 ): Promise<OptionsPositionBalanceResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.optionPositionBalance(
     wallet,
     req.panopticPool,
@@ -1195,37 +1210,39 @@ export async function pokeMedian(
 ): Promise<PokeMedianResponse | Error> {
   const startTimestamp: number = Date.now();
   try {
-    const { wallet } = await txWriteData(ethereumish, req.address);
+    const { wallet } = await txWriteData(ethereumish, req.address, req.doNotBroadcast);
     const gasPrice: number = ethereumish.gasPrice;
-    const tx: ContractReceipt | Error = await panopticish.pokeMedian(
+    const pokeMedianTx: TransactionBuildingResult = await panopticish.pokeMedian(
       wallet,
-      req.panopticPool
+      req.panopticPool,
+      req.doNotBroadcast
     );
 
-    if (tx instanceof Error) {
-      logger.error(`Error executing pokeMedian: ${tx.message}`);
-      return tx;
+    if (pokeMedianTx instanceof Error) {
+      logger.error(`Error executing pokeMedian: ${pokeMedianTx.message}`);
+      return pokeMedianTx;
     }
 
-    if (tx.transactionHash) {
+    if (pokeMedianTx.receipt) {
       await ethereumish.txStorage.saveTx(
         ethereumish.chain,
         ethereumish.chainId,
-        tx.transactionHash,
+        pokeMedianTx.receipt.transactionHash,
         new Date(),
         ethereumish.gasPrice
       );
+
+      logger.info(
+        `pokeMedian has been executed, txHash is ${pokeMedianTx.receipt.transactionHash}, gasPrice is ${gasPrice}, gas used is ${pokeMedianTx.receipt.gasUsed}.`
+      );
     }
 
-    logger.info(
-      `pokeMedian has been executed, txHash is ${tx.transactionHash}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
-    );
-
     return {
-      tx: tx,
+      tx: pokeMedianTx.receipt,
       network: ethereumish.chain,
       timestamp: startTimestamp,
-      txHash: tx.transactionHash,
+      txHash: pokeMedianTx.receipt?.transactionHash,
+      unsignedTransaction: pokeMedianTx.unsignedTransaction
     };
   } catch (error) {
     logger.error(`Unexpected error in pokeMedian function: ${error instanceof Error ? error.message : error}`);
@@ -1240,40 +1257,42 @@ export async function settleLongPremium(
 ): Promise<SettleLongPremiumResponse | Error> {
   const startTimestamp: number = Date.now();
   try {
-    const { wallet } = await txWriteData(ethereumish, req.address);
+    const { wallet } = await txWriteData(ethereumish, req.address, req.doNotBroadcast);
     const gasPrice: number = ethereumish.gasPrice;
-    const tx: ContractReceipt | Error = await panopticish.settleLongPremium(
+    const settleLongPremiumTx: TransactionBuildingResult = await panopticish.settleLongPremium(
       wallet,
       req.panopticPool,
       req.positionIdList,
       req.owner,
-      req.legIndex
+      req.legIndex,
+      req.doNotBroadcast
     );
 
-    if (tx instanceof Error) {
-      logger.error(`Error executing settleLongPremium: ${tx.message}`);
-      return tx;
+    if (settleLongPremiumTx instanceof Error) {
+      logger.error(`Error executing settleLongPremium: ${settleLongPremiumTx.message}`);
+      return settleLongPremiumTx;
     }
 
-    if (tx.transactionHash) {
+    if (settleLongPremiumTx.receipt) {
       await ethereumish.txStorage.saveTx(
         ethereumish.chain,
         ethereumish.chainId,
-        tx.transactionHash,
+        settleLongPremiumTx.receipt.transactionHash,
         new Date(),
         ethereumish.gasPrice
       );
+
+      logger.info(
+        `settleLongPremium has been executed, txHash is ${settleLongPremiumTx.receipt.transactionHash}, gasPrice is ${gasPrice}, gas used is ${settleLongPremiumTx.receipt.gasUsed}.`
+      );
     }
 
-    logger.info(
-      `settleLongPremium has been executed, txHash is ${tx.transactionHash}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
-    );
-
     return {
-      tx: tx,
+      tx: settleLongPremiumTx.receipt,
       network: ethereumish.chain,
       timestamp: startTimestamp,
-      txHash: tx.transactionHash,
+      txHash: settleLongPremiumTx.receipt?.transactionHash,
+      unsignedTransaction: settleLongPremiumTx.unsignedTransaction
     };
   } catch (error) {
     logger.error(`Unexpected error in settleLongPremium function: ${error instanceof Error ? error.message : error}`);
@@ -1290,38 +1309,40 @@ export async function deposit(
 ): Promise<DepositResponse | Error> {
   const startTimestamp: number = Date.now();
   try {
-    const { wallet } = await txWriteData(ethereumish, req.address);
+    const { wallet } = await txWriteData(ethereumish, req.address, req.doNotBroadcast);
     const gasPrice: number = ethereumish.gasPrice;
-    const tx: ContractReceipt | Error = await panopticish.deposit(
+    const depositTx: TransactionBuildingResult = await panopticish.deposit(
       wallet,
       req.collateralTracker,
-      BigNumber.from(req.assets)
+      BigNumber.from(req.assets),
+      req.doNotBroadcast
     );
 
-    if (tx instanceof Error) {
-      logger.error(`Error executing deposit: ${tx.message}`);
-      return tx;
+    if (depositTx instanceof Error) {
+      logger.error(`Error executing deposit: ${depositTx.message}`);
+      return depositTx;
     }
 
-    if (tx.transactionHash) {
+    if (depositTx.receipt) {
       await ethereumish.txStorage.saveTx(
         ethereumish.chain,
         ethereumish.chainId,
-        tx.transactionHash,
+        depositTx.receipt.transactionHash,
         new Date(),
         ethereumish.gasPrice
       );
+
+      logger.info(
+        `deposit has been executed, txHash is ${depositTx.receipt.transactionHash}, gasPrice is ${gasPrice}, gas used is ${depositTx.receipt.gasUsed}.`
+      );
     }
 
-    logger.info(
-      `deposit has been executed, txHash is ${tx.transactionHash}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
-    );
-
     return {
-      tx: tx,
+      tx: depositTx.receipt,
       network: ethereumish.chain,
       timestamp: startTimestamp,
-      txHash: tx.transactionHash
+      txHash: depositTx.receipt?.transactionHash,
+      unsignedTransaction: depositTx.unsignedTransaction
     };
   } catch (error) {
     logger.error(`Unexpected error in deposit function: ${error instanceof Error ? error.message : error}`);
@@ -1334,44 +1355,20 @@ export async function getAsset(
   panopticish: Panoptic,
   req: GetAssetRequest
 ): Promise<GetAssetResponse | Error> {
-  const startTimestamp: number = Date.now();
-  try {
-    const { wallet } = await txWriteData(ethereumish, req.address);
-    const gasPrice: number = ethereumish.gasPrice;
-    const tx: ContractReceipt | Error = await panopticish.getAsset(
-      wallet,
-      req.collateralTracker
-    );
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
+  const result = await panopticish.getAsset(
+    wallet,
+    req.collateralTracker
+  );
 
-    if (tx instanceof Error) {
-      logger.error(`Error executing getAsset: ${tx.message}`);
-      return tx;
-    }
-
-    if (tx.transactionHash) {
-      await ethereumish.txStorage.saveTx(
-        ethereumish.chain,
-        ethereumish.chainId,
-        tx.transactionHash,
-        new Date(),
-        ethereumish.gasPrice
-      );
-    }
-
-    logger.info(
-      `getAsset has been executed, txHash is ${tx.transactionHash}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
-    );
-
-    return {
-      tx: tx,
-      network: ethereumish.chain,
-      timestamp: startTimestamp,
-      txHash: tx.transactionHash,
-    };
-  } catch (error) {
-    logger.error(`Unexpected error in getAsset function: ${error instanceof Error ? error.message : error}`);
-    return new Error(`Unexpected error in getAsset function: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  if (result instanceof Error) {
+    logger.error(`Error executing getAsset: ${result.message}`);
+    return result;
   }
+
+  return {
+    assetTokenAddress: result.asset,
+  };
 }
 
 export async function getPoolData(
@@ -1379,7 +1376,7 @@ export async function getPoolData(
   panopticish: Panoptic,
   req: GetPoolDataRequest
 ): Promise<GetPoolDataResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.getPoolData(
     wallet,
     req.collateralTracker
@@ -1402,7 +1399,7 @@ export async function maxWithdraw(
   panopticish: Panoptic,
   req: MaxWithdrawRequest
 ): Promise<MaxWithdrawResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.maxWithdraw(
     wallet,
     req.collateralTracker
@@ -1425,38 +1422,40 @@ export async function withdraw(
 ): Promise<WithdrawResponse | Error> {
   const startTimestamp: number = Date.now();
   try {
-    const { wallet } = await txWriteData(ethereumish, req.address);
+    const { wallet } = await txWriteData(ethereumish, req.address, req.doNotBroadcast);
     const gasPrice: number = ethereumish.gasPrice;
-    const tx: ContractReceipt | Error = await panopticish.withdraw(
+    const withdrawTx: TransactionBuildingResult = await panopticish.withdraw(
       wallet,
       req.collateralTracker,
-      BigNumber.from(req.assets)
+      BigNumber.from(req.assets),
+      req.doNotBroadcast
     );
 
-    if (tx instanceof Error) {
-      logger.error(`Error executing withdraw: ${tx.message}`);
-      return tx;
+    if (withdrawTx instanceof Error) {
+      logger.error(`Error executing withdraw: ${withdrawTx.message}`);
+      return withdrawTx;
     }
 
-    if (tx.transactionHash) {
+    if (withdrawTx.receipt) {
       await ethereumish.txStorage.saveTx(
         ethereumish.chain,
         ethereumish.chainId,
-        tx.transactionHash,
+        withdrawTx.receipt.transactionHash,
         new Date(),
         ethereumish.gasPrice
       );
+
+      logger.info(
+        `withdraw has been executed, txHash is ${withdrawTx.receipt.transactionHash}, gasPrice is ${gasPrice}, gas used is ${withdrawTx.receipt.gasUsed}.`
+      );
     }
 
-    logger.info(
-      `withdraw has been executed, txHash is ${tx.transactionHash}, gasPrice is ${gasPrice}, gas used is ${tx.gasUsed}.`
-    );
-
     return {
-      tx: tx,
+      tx: withdrawTx.receipt,
       network: ethereumish.chain,
       timestamp: startTimestamp,
-      txHash: tx.transactionHash
+      txHash: withdrawTx.receipt?.transactionHash,
+      unsignedTransaction: withdrawTx.unsignedTransaction
     };
   } catch (error) {
     logger.error(`Unexpected error in withdraw function: ${error instanceof Error ? error.message : error}`);
@@ -1470,7 +1469,7 @@ export async function getAccountLiquidity(
   panopticish: Panoptic,
   req: GetAccountLiquidityRequest
 ): Promise<GetAccountLiquidityResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.getAccountLiquidity(
     wallet,
     req.univ3pool,
@@ -1495,7 +1494,7 @@ export async function getAccountPremium(
   panopticish: Panoptic,
   req: GetAccountPremiumRequest
 ): Promise<GetAccountPremiumResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.getAccountPremium(
     wallet,
     req.univ3pool,
@@ -1523,7 +1522,7 @@ export async function getAccountFeesBase(
   panopticish: Panoptic,
   req: GetAccountFeesBaseRequest
 ): Promise<GetAccountFeesBaseResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.getAccountFeesBase(
     wallet,
     req.univ3pool,
@@ -1550,7 +1549,7 @@ export async function addLeg(
   panopticish: Panoptic,
   req: CreateAddLegsRequest
 ): Promise<CreatePositionResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.addLeg(
     wallet,
     req.self,
@@ -1579,7 +1578,7 @@ export async function getPanopticPool(
   panopticish: Panoptic,
   req: GetPanopticPoolRequest
 ): Promise<GetPanopticPoolResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.getPanopticPool(
     wallet,
     req.uniswapV3PoolAddress
@@ -1601,7 +1600,7 @@ export async function checkUniswapPool(
   panopticish: Panoptic,
   req: CheckUniswapV3PoolRequest
 ): Promise<CheckUniswapV3PoolResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.checkUniswapPool(
     wallet,
     req.t0_address,
@@ -1625,7 +1624,7 @@ export async function getSpotPrice(
   panopticish: Panoptic,
   req: GetSpotPriceRequest
 ): Promise<GetSpotPriceResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.getSpotPrice(
     wallet,
     req.uniswapV3PoolAddress,
@@ -1646,7 +1645,7 @@ export async function getTickSpacingAndInitializedTicks(
   panopticish: Panoptic,
   req: GetTickSpacingAndInitializedTicksRequest
 ): Promise<GetTickSpacingAndInitializedTicksResponse | Error> {
-  const { wallet } = await txWriteData(ethereumish, req.address);
+  const { wallet } = await txWriteData(ethereumish, req.address, false);
   const result = await panopticish.getTickSpacingAndInitializedTicks(
     wallet,
     req.uniswapV3PoolAddress
