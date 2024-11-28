@@ -1,6 +1,5 @@
 import {
   isFloatString,
-  isFractionString,
   mkValidator,
   mkRequestValidator,
   RequestValidator,
@@ -51,9 +50,6 @@ export const invalidTimeError: string =
 
 export const invalidDecreasePercentError: string =
   'If decreasePercent is included it must be a non-negative integer.';
-
-export const invalidAllowedSlippageError: string =
-  'The allowedSlippage param may be null or a string of a fraction.';
 
 export const invalidPoolIdError: string =
   'PoolId(if supplied) must be a string.';
@@ -199,13 +195,6 @@ export const validateDecreasePercent: Validator = mkValidator(
   (val) =>
     typeof val === 'undefined' ||
     (typeof val === 'number' && val >= 0 && Number.isFinite(val)),
-  true
-);
-
-export const validateAllowedSlippage: Validator = mkValidator(
-  'allowedSlippage',
-  invalidAllowedSlippageError,
-  (val) => typeof val === 'string' && (isFractionString(val) || val.includes('%')),
   true
 );
 

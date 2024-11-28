@@ -39,7 +39,6 @@ export class Panoptic {
   private _TokenIdLibrary: string;
   private _absoluteGasLimit: number;
   private _gasLimitCushionFactor: number;
-  private _ttl: number;
   private _subgraphUrl: string;
   private _uniswapV3SubgraphUrl: string;
   private _lowestTick: number;
@@ -62,7 +61,6 @@ export class Panoptic {
     this._PanopticHelper = config.PanopticHelper(chain, network);
     this._UniswapMigrator = config.UniswapMigrator(chain, network);
     this._TokenIdLibrary = config.TokenIdLibrary(chain, network);
-    this._ttl = config.ttl;
     this._subgraphUrl = config.subgraphUrl;
     this._uniswapV3SubgraphUrl = config.uniswapV3SubgraphUrl;
     this._lowestTick = config.lowestTick;
@@ -155,9 +153,6 @@ export class Panoptic {
   }
   public get gasLimitCushionFactor(): number {
     return this._gasLimitCushionFactor;
-  }
-  public get ttl(): number {
-    return this._ttl;
   }
   public get subgraphUrl(): string {
     return this._subgraphUrl;
